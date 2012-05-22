@@ -13,14 +13,14 @@ Server-side code to handle the AJAX requests
 
 First, to use the widget, you must download the main JavaScript file into your JavaScript directory.  Then, simply include the widget file after the core jQuery Mobile JavaScript file:
 
-```
+```html
 <script type="text/javascript" src="includes/js/jquery.mobile-1.1.0.js"></script>
 <script type="text/javascript" src="includes/js/jquery.mobile.lazyloader-0.9.js"></script>
 ```
 
 Then, to instantiate the widget instance, add a pageinit for your main page (in my case the main data-role="page" has an id="index"):  
 
-```
+```JavaScript
 $('body').on('pageinit', '#index', function( evt, ui ) {
 
     // Initialize the lazyloader widget
