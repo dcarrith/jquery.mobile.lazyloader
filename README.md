@@ -14,6 +14,7 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 First, to use the widget, you must download the main JavaScript file into your JavaScript directory.  Then, simply include the widget file after the core jQuery Mobile JavaScript file:
 
 ```html
+<script src="includes/js/jquery-1.7.2.min.js"></script>
 <script src="includes/js/jquery.mobile-1.1.0.js"></script>
 <script src="includes/js/jquery.mobile.lazyloader-0.9.js"></script>
 ```
@@ -27,9 +28,10 @@ $('body').on('pageinit', '#index', function( evt, ui ) {
     $("#index").lazyloader();
 
     /* Set some default options for the lazyloader
-     *   these set the timeout value for when the widget should check 
-     *   the current scroll position relative to page height to decide 
-     *   whether or not to load more yet
+     *   the first three set the timeout value for when the widget should check
+     *   the current scroll position relative to page height to decide whether
+     *   or not to load more yet.  The showprogress option is to specify the
+     *   duration of the fadeIn animation for the lazyloaderProgressDiv.
      */
     $.mobile.lazyloader.prototype.timeoutOptions.mousewheel = 300;
     $.mobile.lazyloader.prototype.timeoutOptions.scrollstart = 700;
@@ -134,3 +136,44 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
 
 The values of the parameters are taken from the values specified in the options object.  The parameters object is used in generating the POST variables for the AJAX call to the server-side resource for retrieving more li elements to lazy load.  Any items specified in the parameters will be complemented by any
 hidden input elements that are on the same page as the listview element to lazyload.
+
+Here's an example of how the lazyloader is reinitialized on the albums page.  Notice the higher threshold compared to the artists page and the lower retrieve and retrieved values.  That is because the albums list items are about twice the height of the artists li items because the albums have album art:
+
+```JavaScript
+$('body').on('pageinit', '#albums', function(evt, ui) {
+
+    // Set up the variable options to pass to the lazyloader reinitialize function
+    var options = { "threshold"     : 480,
+                    "retrieve"      : 10,
+                    "retrieved"     : 10,
+                    "bubbles"       : true };
+
+    // Set up the page specific settings to pass to the lazyloader reinitialize function
+    var settings = {    "pageId"        : "albums",
+                        "ulId"          : "albumsList",
+                        "progressDivId" : "lazyloaderProgressDiv",
+                        "moreUrl"       : "/albums/more",
+                        "clearUrl"      : "/home/clear_session" };
+
+    // Set up the post parameters to pass to the lazyloader reinitialize function
+    var parameters = {  "retrieve"      : options.retrieve,
+                        "retrieved"     : options.retrieved,
+                        "offset"        : options.offset };
+
+    // Reinitialize the lazyloader so that it correctly handles the listview on the artists page
+    $( "#index" ).lazyloader( "reInitialize", options, settings, parameters );
+});
+```
+
+### Clearing the server-side session variables
+
+The server-side session variables can be cleared by calling the lazyloader reset or resetAll methods.  For example, I'm calling the resetAll in the index pageshow handler:
+
+```JavaScript
+$('body').on('pageshow', '#index', function(evt, ui) {
+
+    $( "#index" ).lazyloader( "resetAll" );
+});
+```
+
+The resetAll method uses the clearUrl that was specified when the lazyloader for the page in question was reinitialized.
