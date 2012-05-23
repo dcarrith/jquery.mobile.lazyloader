@@ -5,9 +5,9 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 
 ### Requirements
 
-jQuery 1.7.x (although, jQuery 1.6.4 may work fine - it just hasn't been tested - and, the examples are tailored to jQuery 1.7.x)
-jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)
-Server-side code to handle the AJAX requests
+* jQuery 1.7.x (although, jQuery 1.6.4 may work fine - it just hasn't been tested - and, the examples are tailored to jQuery 1.7.x)
+* jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)
+* Server-side code to handle the AJAX requests
 
 ### Using the LazyLoader widget
 
@@ -126,7 +126,7 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
     <td>moreUrl</td><td>/artists/more</td><td>This specifies the URL of the server-side resource to which the AJAX post should be sent</td>
   </tr>
   <tr>
-    <td>clearUrl</td>/home/clear_session<td></td><td>This specifies the URL of the server-side resource to which the AJAX post to clear the server-side session variables should be sent</td>
+    <td>clearUrl</td><td>/home/clear_session</td><td>This specifies the URL of the server-side resource to which the AJAX post to clear the server-side session variables should be sent</td>
   </tr>
 </table>
 
