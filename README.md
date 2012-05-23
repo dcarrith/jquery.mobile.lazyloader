@@ -177,3 +177,34 @@ $('body').on('pageshow', '#index', function(evt, ui) {
 ```
 
 The resetAll method uses the clearUrl that was specified when the lazyloader for the page in question was reinitialized.
+
+### Listening for events triggered by the lazyloader widget
+
+The lazyloader triggers several events during certain operations.  Here are examples of how to listen for the events:
+
+```JavaScript
+$("body").on("lazyloadercreate", "#index", function ( evt ){
+
+    //alert("lazyloadercreate called!\n\nevt.instances: "+JSON.stringify(evt));
+});
+
+$("body").on("lazyloaderdone", "#index", function ( evt ){
+
+    //alert("lazyloaderdone called!\n\nevt.instances: "+JSON.stringify(evt));
+});
+
+$("body").on("lazyloadererror", "#index", function ( evt ){
+
+    //alert("lazyloaderdestroy called!\n\nevt.instances: "+JSON.stringify(evt));
+});
+
+$("body").on("lazyloaderreset", "#index", function ( evt ){
+
+    //alert("lazyloaderreset called!\n\nevt.instances: "+JSON.stringify(evt));
+});
+
+$("body").on("lazyloaderresetall", "#index", function ( evt ){
+
+    //alert("lazyloaderresetall called!\n\nevt.instances: "+JSON.stringify(evt));
+});
+```
