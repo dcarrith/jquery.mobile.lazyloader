@@ -14,8 +14,8 @@ Server-side code to handle the AJAX requests
 First, to use the widget, you must download the main JavaScript file into your JavaScript directory.  Then, simply include the widget file after the core jQuery Mobile JavaScript file:
 
 ```html
-<script type="text/javascript" src="includes/js/jquery.mobile-1.1.0.js"></script>
-<script type="text/javascript" src="includes/js/jquery.mobile.lazyloader-0.9.js"></script>
+<script src="includes/js/jquery.mobile-1.1.0.js"></script>
+<script src="includes/js/jquery.mobile.lazyloader-0.9.js"></script>
 ```
 
 Then, to instantiate the widget instance, add a pageinit for your main page (in my case the main data-role="page" has an id="index"):  
@@ -26,8 +26,11 @@ $('body').on('pageinit', '#index', function( evt, ui ) {
     // Initialize the lazyloader widget
     $("#index").lazyloader();
 
-    // Set some default options for the lazyloader - these set the timeout value for when the widget should 
-    // check the current scroll position relative to page height to decide whether or not to load more yet
+    /* Set some default options for the lazyloader
+     *   these set the timeout value for when the widget should check 
+     *   the current scroll position relative to page height to decide 
+     *   whether or not to load more yet
+     */
     $.mobile.lazyloader.prototype.timeoutOptions.mousewheel = 300;
     $.mobile.lazyloader.prototype.timeoutOptions.scrollstart = 700;
     $.mobile.lazyloader.prototype.timeoutOptions.scrollstop = 100;
@@ -36,6 +39,98 @@ $('body').on('pageinit', '#index', function( evt, ui ) {
 
 ```
 
+Now, the rest of this documentation will use examples specific to the application
+for which this widget was originally developed (www.mpdtunes.com).  Using a music
+app as the model will provide good use-case scenarios to be explained.  
 
+For any pages that contain listviews that you want to lazyload, you have to add a 
+pageinit handler such as the one used below for the artists page:
 
+```JavaScript
+$('body').on('pageinit', '#artists', function(evt, ui) {
 
+    /* Reset the lazy loader instance for the albums page
+     *   This resets the widget instance variables for the albums page    
+     *   This is done here because the artists page is one level up
+     *   from the albums page, so it needs to be reset in case the user
+     *   selects a different artist who will have their own albums that
+     *   will need to be lazy loaded
+     *   
+     *   Note: in this example, "reset" is the function and "albums" is
+     *      the pageId of the albums page 
+     */
+    $( "#index" ).lazyloader( "reset", "albums" );
+
+    // Set up the variable options to pass to the lazyloader reinitialize function
+    var options = { "threshold"     : 360,
+                    "retrieve"      : 20,
+                    "retrieved"     : 20,
+                    "bubbles"       : true,
+                    "offset"        : 0 };
+
+    // Set up the page specific settings to pass to the lazyloader reinitialize function
+    var settings = {    "pageId"        : "artists",
+                        "ulId"          : "artistsList",
+                        "progressDivId" : "lazyloaderProgressDiv",
+                        "moreUrl"       : "/artists/more",
+                        "clearUrl"      : "/home/clear_session" };
+
+    // Set up the post parameters to pass to the lazyloader reinitialize function
+    var parameters = {  "retrieve"      : options.retrieve,
+                        "retrieved"     : options.retrieved,
+                        "offset"        : options.offset };
+
+    // Reinitialize the lazyloader so that it correctly handles the listview on the artists page
+    $( "#index" ).lazyloader( "reInitialize", options, settings, parameters );
+});
+
+```
+
+### Explanation of available options:
+<table>
+  <tr>
+    <th>Option</th><th>Value</th><th>Purpose</th>
+  </tr>
+  <tr>
+    <td>threshold</td><td>360</td><td>This specifies the threshold in pixels for how close to the bottom of the page should the widget get before making the call to the private function _load</td>
+  </tr>
+  <tr>
+    <td>retrieve</td><td>20</td><td>This specifies how many items should be retrieved with each lazy loading ajax call</td>
+  </tr>
+  <tr>
+    <td>retrieved</td><td>20</td><td>This specifies the number of items that are initially loaded on the server-side</td>
+  </tr>
+  <tr>
+    <td>bubbles</td><td>true</td><td>This specifies whether or not to calculate the count bubbles in the list item markup that get's loaded dynamically</td>
+  </tr>
+  <tr>
+    <td>offset</td><td>0</td><td>This is for specifying an offset into the query for more items.  For example, this is used in the queue page in case tracks are deleted from the queue while there are still items to lazy load.</td>
+  </tr>
+</table>
+
+### Explanation of available settings:
+<table>
+  <tr>
+    <th>Setting</th><th>Value</th><th>Purpose</th>
+  </tr>
+  <tr>
+    <td>pageId</td><td>artists</td><td>This specifies the id of the data-role="page" div element of the page containing the listview to lazyload</td>
+  </tr>
+  <tr>
+    <td>ulId</td><td>artistsList</td><td>This specifies the id of the ul element of the listview to lazyload</td>
+  </tr>
+  <tr>
+    <td>progressDivId</td><td>lazyloaderProgressDiv</td><td>This specifies the id of the div element containing the lazyloading progress indicator animated gif or whatever</td>
+  </tr>
+  <tr>
+    <td>moreUrl</td><td>/artists/more</td><td>This specifies the URL of the server-side resource to which the AJAX post should be sent</td>
+  </tr>
+  <tr>
+    <td>clearUrl</td>/home/clear_session<td></td><td>This specifies the URL of the server-side resource to which the AJAX post to clear the server-side session variables should be sent</td>
+  </tr>
+</table>
+
+### Explanation of available parameters:
+
+The values of the parameters are taken from the values specified in the options object.  The parameters object is used in generating the POST variables for the AJAX call to the server-side resource for retrieving more li elements to lazy load.  Any items specified in the parameters will be complemented by any
+hidden input elements that are on the same page as the listview element to lazyload.
