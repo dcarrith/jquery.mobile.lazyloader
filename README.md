@@ -185,26 +185,26 @@ The lazyloader triggers several events during certain operations.  Here are exam
 ```JavaScript
 $("body").on("lazyloadercreate", "#index", function ( evt ){
 
-    //alert("lazyloadercreate called!\n\nevt.instances: "+JSON.stringify(evt));
+    // handle the event
 });
 
 $("body").on("lazyloaderdone", "#index", function ( evt ){
 
-    //alert("lazyloaderdone called!\n\nevt.instances: "+JSON.stringify(evt));
+    // handle the event
 });
 
 $("body").on("lazyloadererror", "#index", function ( evt ){
 
-    //alert("lazyloaderdestroy called!\n\nevt.instances: "+JSON.stringify(evt));
+    // handle the event
 });
 
 $("body").on("lazyloaderreset", "#index", function ( evt ){
 
-    //alert("lazyloaderreset called!\n\nevt.instances: "+JSON.stringify(evt));
+    // handle the event
 });
 
 $("body").on("lazyloaderresetall", "#index", function ( evt ){
 
-    //alert("lazyloaderresetall called!\n\nevt.instances: "+JSON.stringify(evt));
+    // handle the event
 });
 ```
