@@ -215,22 +215,22 @@ The server-side resource will then take those parameters and build the JSON resp
 
 ```JavaScript
 { "data" : 
-            [{  "count" : "2", 
-                "html" : "  <li class='ui-li-has-thumb'>
-                                <a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'>
-                                    <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
-                                    <h3 class='ui-li-heading'>On we go</h3>
-                                    <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>4</span>
-                                </a>
-                            </li>
-                            <li class='ui-li-has-thumb'>
-                                <a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'>
-                                    <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
-                                    <h3 class='ui-li-heading'>trodin on</h3>
-                                    <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>14</span>
-                                </a>
-                            </li>" 
-            }] 
+    [{  "count" : "2", 
+        "html" : "  <li class='ui-li-has-thumb'>
+                        <a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'>
+                            <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
+                            <h3 class='ui-li-heading'>On we go</h3>
+                            <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>4</span>
+                        </a>
+                    </li>
+                    <li class='ui-li-has-thumb'>
+                        <a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'>
+                            <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
+                            <h3 class='ui-li-heading'>trodin on</h3>
+                            <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>14</span>
+                        </a>
+                    </li>" 
+    }] 
 }
 ```
 
