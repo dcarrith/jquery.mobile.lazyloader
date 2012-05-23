@@ -167,6 +167,38 @@ hidden input elements that are on the same page as the listview element to lazyl
 
 ### The AJAX call to the server-side resource
 
+First, the lazyloader widget makes a call to fadeIn the lazyloaderProgressDiv which contains the animated gif to indicate that more items are being loaded.  The HTML for the lazyloaderProgressDiv looks like this:
+
+```HTML
+<div id="lazyloaderProgressDiv" class="width-hundred-percent display-none">
+    <div class="width-two-hundred-pixels center-element align-center">
+        <img src="/images/loading_more_bar.gif" />
+    </div>
+</div>
+<br class="clear" />
+```
+
+The CSS for those classes is as follows:
+
+```CSS
+.width-hundred-percent {
+    width:100% !important;
+}
+.display-none {
+    display:none;
+}
+.width-two-hundred-pixels {
+    width:200px;
+}
+.center-element {
+    margin-right: auto; 
+    margin-left: auto;
+}
+.align-center {
+    text-align: center;
+}
+```
+
 Taking the moreUrl (with value "/albums/more") setting above as an example, and the parameters object to generate the POST variables, here's what it might look like.  Because we also need to know which artist to use when retrieving albums, we set a hidden input in the albums page:
 
 ```HTML
@@ -182,7 +214,24 @@ retrieve=10&retrieved=10&offset=0&param_one=Gentleman
 The server-side resource will then take those parameters and build the JSON response that would look something like this.  For example, if 10 Gentleman albums out of 12 were already showing, then this would be the server response with the last 2 albums:
 
 ```JavaScript
- { "data" : [{ "count" : "2", "html" : "<li class='ui-li-has-thumb'><a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'><img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading'>On we go</h3><span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>4</span></li><li class='ui-li-has-thumb'><a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'><img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading'>trodin on</h3><span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>14</span></li>" } ] } 
+{ "data" : 
+            [{  "count" : "2", 
+                "html" : "  <li class='ui-li-has-thumb'>
+                                <a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'>
+                                    <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
+                                    <h3 class='ui-li-heading'>On we go</h3>
+                                    <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>4</span>
+                                </a>
+                            </li>
+                            <li class='ui-li-has-thumb'>
+                                <a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'>
+                                    <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
+                                    <h3 class='ui-li-heading'>trodin on</h3>
+                                    <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>14</span>
+                                </a>
+                            </li>" 
+            }] 
+}
 ```
 
 The important pieces of the JSON are the count and the html.  The count is used to increment the instance specific count of how many items were "retrieved".  The html value is used in the below two lines of the lazyloader widget _load function which appends them to the end of the li items just before the last li (which is likely the divider):
