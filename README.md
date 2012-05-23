@@ -88,6 +88,34 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
 
 ```
 
+Here's an example of how the lazyloader is reinitialized on the albums page.  Notice the higher threshold compared to the artists page and the lower retrieve and retrieved values.  That is because the albums list items are about twice the height of the artists li items because the albums have album art:
+
+```JavaScript
+$('body').on('pageinit', '#albums', function(evt, ui) {
+
+    // Set up the variable options to pass to the lazyloader reinitialize function
+    var options = { "threshold"     : 480,
+                    "retrieve"      : 10,
+                    "retrieved"     : 10,
+                    "bubbles"       : true };
+
+    // Set up the page specific settings to pass to the lazyloader reinitialize function
+    var settings = {    "pageId"        : "albums",
+                        "ulId"          : "albumsList",
+                        "progressDivId" : "lazyloaderProgressDiv",
+                        "moreUrl"       : "/albums/more",
+                        "clearUrl"      : "/home/clear_session" };
+
+    // Set up the post parameters to pass to the lazyloader reinitialize function
+    var parameters = {  "retrieve"      : options.retrieve,
+                        "retrieved"     : options.retrieved,
+                        "offset"        : options.offset };
+
+    // Reinitialize the lazyloader so that it correctly handles the listview on the artists page
+    $( "#index" ).lazyloader( "reInitialize", options, settings, parameters );
+});
+```
+
 ### Explanation of available options:
 <table>
   <tr>
@@ -137,37 +165,36 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
 The values of the parameters are taken from the values specified in the options object.  The parameters object is used in generating the POST variables for the AJAX call to the server-side resource for retrieving more li elements to lazy load.  Any items specified in the parameters will be complemented by any
 hidden input elements that are on the same page as the listview element to lazyload.
 
-Here's an example of how the lazyloader is reinitialized on the albums page.  Notice the higher threshold compared to the artists page and the lower retrieve and retrieved values.  That is because the albums list items are about twice the height of the artists li items because the albums have album art:
+### The AJAX call to the server-side resource
 
-```JavaScript
-$('body').on('pageinit', '#albums', function(evt, ui) {
+Taking the moreUrl (with value "/albums/more") setting above as an example, and the parameters object to generate the POST variables, here's what it might look like.  Because we also need to know which artist to use when retrieving albums, we set a hidden input in the albums page:
 
-    // Set up the variable options to pass to the lazyloader reinitialize function
-    var options = { "threshold"     : 480,
-                    "retrieve"      : 10,
-                    "retrieved"     : 10,
-                    "bubbles"       : true };
-
-    // Set up the page specific settings to pass to the lazyloader reinitialize function
-    var settings = {    "pageId"        : "albums",
-                        "ulId"          : "albumsList",
-                        "progressDivId" : "lazyloaderProgressDiv",
-                        "moreUrl"       : "/albums/more",
-                        "clearUrl"      : "/home/clear_session" };
-
-    // Set up the post parameters to pass to the lazyloader reinitialize function
-    var parameters = {  "retrieve"      : options.retrieve,
-                        "retrieved"     : options.retrieved,
-                        "offset"        : options.offset };
-
-    // Reinitialize the lazyloader so that it correctly handles the listview on the artists page
-    $( "#index" ).lazyloader( "reInitialize", options, settings, parameters );
-});
+```HTML
+<input type="hidden" id="param_one" name="param_one" value="<?php echo $artist_name; ?>" />
 ```
 
-### Clearing the server-side session variables
+The lazyloader widget will automatically build the string to use for the POST data for the $.ajax request by usng the parameters passed in at initialization as well as the hidden input item so that POST data string will look like this:
 
-The server-side session variables can be cleared by calling the lazyloader reset or resetAll methods.  For example, I'm calling the resetAll in the index pageshow handler:
+```HTML
+retrieve=10&retrieved=10&offset=0&param_one=Gentleman
+```
+
+The server-side resource will then take those parameters and build the JSON response that would look something like this.  For example, if 10 Gentleman albums out of 12 were already showing, then this would be the server response with the last 2 albums:
+
+```JavaScript
+ { "data" : [{ "count" : "2", "html" : "<li class='ui-li-has-thumb'><a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'><img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading'>On we go</h3><span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>4</span></li><li class='ui-li-has-thumb'><a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'><img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading'>trodin on</h3><span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>14</span></li>" } ] } 
+```
+
+The important pieces of the JSON are the count and the html.  The count is used to increment the instance specific count of how many items were "retrieved".  The html value is used in the below two lines of the lazyloader widget _load function which appends them to the end of the li items just before the last li (which is likely the divider):
+
+```JavaScript
+$("#"+$that._settings.ulId+' li').last().before(html);
+$("#"+$that._settings.ulId).listview('refresh');
+```
+
+### Resetting instance variables and clearing the server-side session variables
+
+Any values specific to a particular instance of the lazy loader and any server-side session variables can be cleared by calling the lazyloader reset or resetAll methods.  For example, I'm calling the resetAll in the index pageshow handler:
 
 ```JavaScript
 $('body').on('pageshow', '#index', function(evt, ui) {
