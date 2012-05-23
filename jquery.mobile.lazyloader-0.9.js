@@ -490,7 +490,7 @@
 
 						$that._widgetState.done = false;
 
-						if ($that._instances[pageId]) {
+						if (typeof $that._instances[pageId] != 'undefined') {
 							
 							//alert("deleting $that._instances["+pageId+"]: \n\n"+JSON.stringify($that._instances[pageId]));
 							delete $that._instances[pageId];
