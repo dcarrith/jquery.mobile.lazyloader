@@ -119,6 +119,41 @@ $('body').on('pageinit', '#albums', function(evt, ui) {
 });
 ```
 
+### What to do when a listview also has a search filter?
+
+When a listvew is being lazy loaded and also has a search filter (which kind of requires all items to be shown so they can be filtered properly) the trick is to just pull the rest of the listview items onfocus to the search filter.  Here's an example of how to do that:
+
+```JavaScript
+$('body').on('focusin', 'input[data-type="search"]', function(evt, ui) {
+
+    // Set the retrieve option to all so it pulls the rest of the items to lazy load
+    $( "#index" ).lazyloader( "option", "retrieve", "all" );
+
+    // Refresh the corresponding parameter with the option that was just set
+    $( "#index" ).lazyloader( "refresh", "parameter", "retrieve" );
+
+    // Manually make a call to the public version of the _load function and override the default timeout
+    $( "#index" ).lazyloader( "loadMore", 0 );
+});
+```
+
+Basically, the first line sets the option "retrieve" to the value "all".  The refresh method is then called and the "retrieve" parameter is updated with the value of the option that was just set.  Then, the loadMore function is called using the internal options and parameters stored for the particular page on which the listview and search filter exist.  
+
+### What to do when there is a button that manually scrolls the page down (and therefore doesn't use scrollstart, scrollstop or mousewheel)?
+
+It's easy, just call loadMore, which will use whatever options, settings and parameters the lazyloader widget was re-initialized with:
+
+```JavaScript
+function scrollDown(section) {
+    
+    // do whatever
+    ...
+
+    // Manually make a call to the public version of the _load function
+    $( "#index" ).lazyloader( "loadMore" );
+}
+```
+
 ### Explanation of available options:
 <table>
   <tr>
