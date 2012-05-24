@@ -338,7 +338,7 @@
 
                             console.log($that._settings.url);
                             console.log(query_string);
-                            //alert("$that._settings.url: "+$that._settings.url+"\nquery_string: "+query_string);
+                            //alert("$that._settings.url: "+$that._settings.moreUrl+"\nquery_string: "+query_string);
 
                             $.ajax({
                                 type: "POST",
@@ -487,6 +487,23 @@
         	}
         },
 
+        _setOption: function( key, value ) {
+
+            // we need to make sure the options record being tracked for this instance gets updated too
+            if (this._instances[this._settings.pageId]) {
+
+                if ( this._instances[this._settings.pageId][key] ) {
+
+                    this._instances[this._settings.pageId][key] = value;
+                }
+            }
+
+            // For UI 1.8, _setOption must be manually invoked from the base widget
+            $.Widget.prototype._setOption.apply(this, arguments);
+            // For UI 1.9 the _super method can be used instead
+            // this._super( "_setOption", key, value );
+        },
+
         refresh : function ( what ) {
 
         	//alert("what: "+what+"\n\narguments: "+JSON.stringify(arguments));
@@ -517,6 +534,11 @@
 
         		// whatever
         	}
+
+            // Get any user defined settings and extend / merge / override them with defaultSettings
+            var newParameters = JSON.stringify(this.parameters);
+
+            this.parameters = $.parseJSON(newParameters);
 
         	//alert(JSON.stringify(this.parameters));
         },
