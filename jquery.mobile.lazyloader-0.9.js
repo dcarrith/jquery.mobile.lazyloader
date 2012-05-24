@@ -11,42 +11,6 @@
         // The jQuery object containing the ul element that is to be lazy loaded
         $ul :       null,  
 
-
-        // Short circuit event toggles to prevent the handling of multiple events at the same time
-        _handle_scrollstart_just_fired : false,
-        _handle_scrollstop_just_fired : false,
-        _mousewheel_event_just_fired : false,
-        
-        // Variables to store the id of the setTimeout of the short circuit event toggle that sets toggle back to false
-        _handle_scrollstart_timeout_id : null,
-        _handle_scrollstop_timeout_id : null,
-        _mousewheel_timeout_id : null,
-
-
-        // Object to contain two possible widget states
-        _widgetState : {
-
-            // whether or not we are already retrieving items from server
-            'busy'          : false,
-            // this is to specify whether lazy loading is probably done, so we don't need to try anymore
-            'done'          : false
-        },
-
-        // Create some default settings that can be extended in reinitialization
-        _defaultSettings : {
-
-            // The page id of the page on which the lazyloader widget instance will be running
-            "pageId"        : "",
-            // The id of the list which the lazyloader widget instance will lazy loading
-            "ulId"          : "",
-            // The id of the DIV that should contain the animated gif to indicate more items are being loaded
-            "progressDivId" : "",
-            // The url of the server side resource to which the lazy loader AJAX call should be directed
-            "moreUrl"       : "",
-            // The url of the server side resource responsible for clearing server-side session variables to maintain state
-            "clearUrl"      : "" 
-        },
-
         // Create some default options that can be extended in reinitialization
         _defaultOptions : {
 
@@ -73,9 +37,33 @@
             'offset'        : 0
         },
 
+        // Create some default settings that can be extended in reinitialization
+        _defaultSettings : {
 
-        // This stores the merged object containing _defaultSettings and any overriding settings passed in
-        _settings : null,   
+            // The page id of the page on which the lazyloader widget instance will be running
+            "pageId"        : "",
+            // The id of the list which the lazyloader widget instance will lazy loading
+            "ulId"          : "",
+            // The id of the DIV that should contain the animated gif to indicate more items are being loaded
+            "progressDivId" : "",
+            // The url of the server side resource to which the lazy loader AJAX call should be directed
+            "moreUrl"       : "",
+            // The url of the server side resource responsible for clearing server-side session variables to maintain state
+            "clearUrl"      : "" 
+        },
+
+        // Short circuit event toggles to prevent the handling of multiple events at the same time
+        _handleScrollStartJustFired : false,
+        _handleScrollStopJustFired : false,
+        _mouseWheelEventJustFired : false,
+        
+        // Variables to store the id of the setTimeout of the short circuit event toggle that sets toggle back to false
+        _handleScrollStartTimeoutId : null,
+        _handleScrollStopTimeoutId : null,
+        _mouseWheelTimeoutId : null,
+
+        // This stores the _settings for the last time the widget instance was used by a particular page (keyed by pageId)
+        _instances : {}, 
 
         // This stores the merged object containing _defaultOptions and any overriding options passed in
         _options : null, 
@@ -83,9 +71,8 @@
         // This stores the merged object containing _defaultParameters and any overriding options passed in
         _parameters : null,
 
-        // This stores the _settings for the last time the widget instance was used by a particular page (keyed by pageId)
-        _instances : new Object(),
-
+        // This stores the merged object containing _defaultSettings and any overriding settings passed in
+        _settings : null,  
 
         // Timeout values used for varying some of the setTimeout values used in the widget
         timeoutOptions : {
@@ -98,6 +85,18 @@
             'scrollstop'    : 60,
             // this is the timeout for how quickly to show the loading more items progress indicator at bottom
             'showprogress'  : 200
+        },
+
+        // The name of the widget
+		_widgetName : "lazyloader",
+
+        // Object to contain two possible widget states
+        _widgetState : {
+
+            // whether or not we are already retrieving items from server
+            'busy'          : false,
+            // this is to specify whether lazy loading is probably done, so we don't need to try anymore
+            'done'          : false
         },
 
         // Runs automatically the first time this widget is called. Put the initial widget set-up code here. 
@@ -114,8 +113,10 @@
             alert(JSON.stringify(this.$ul));
             alert(JSON.stringify(this._widgetState));
             alert(JSON.stringify(this._defaultSettings));
-            alert(JSON.stringify(this._instances));
-            alert(JSON.stringify(this._settings));*/
+            alert(JSON.stringify(this._settings));
+            alert(JSON.stringify(this._options));
+            alert(JSON.stringify(this._parameters));
+            alert(JSON.stringify(this._instances));*/
         },
 
         _init : function () {
@@ -173,22 +174,22 @@
 
         _bind : function () {
 
-            $('body').bind("scrollstart", $.proxy( this._handle_scrollstart, this ));
-            $('body').bind("scrollstop", $.proxy( this._handle_scrollstop, this ));
+            $('body').bind("scrollstart", $.proxy( this._handleScrollStart, this ));
+            $('body').bind("scrollstop", $.proxy( this._handleScrollStop, this ));
 
             if (/Firefox/i.test(navigator.userAgent)) {
 
-                $(window).bind( "DOMMouseScroll", $.proxy( this._handle_mousewheel_event, this ) );
+                $(window).bind( "DOMMouseScroll", $.proxy( this._handleMouseWheelEvent, this ) );
 
             } else {
             
                 if ($("#"+this._settings.ulId).attachEvent) {
 
-                    $(window).bind( "onmousewheel", $.proxy( this._handle_mousewheel_event, this ) );
+                    $(window).bind( "onmousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
 
                 } else {
 
-                    $(window).bind( "mousewheel", $.proxy( this._handle_mousewheel_event, this ) );
+                    $(window).bind( "mousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
                 }
             }
 
@@ -198,27 +199,27 @@
 
         _unbind : function () {
 
-            $('body').unbind("scrollstart", this._handle_scrollstart );
-            $('body').unbind("scrollstop", this._handle_scrollstop );
+            $('body').unbind("scrollstart", this._handleScrollStart );
+            $('body').unbind("scrollstop", this._handleScrollStop );
 
             if (/Firefox/i.test(navigator.userAgent)) {
 
-                $(window).unbind( "DOMMouseScroll", this._handle_mousewheel_event );
+                $(window).unbind( "DOMMouseScroll", this._handleMouseWheelEvent );
 
             } else {
             
                 if ($("#"+this._settings.ulId).attachEvent) {
 
-                    $(window).unbind( "onmousewheel", this._handle_mousewheel_event );
+                    $(window).unbind( "onmousewheel", this._handleMouseWheelEvent );
 
                 } else {
 
-                    $(window).unbind( "mousewheel", this._handle_mousewheel_event );
+                    $(window).unbind( "mousewheel", this._handleMouseWheelEvent );
                 }
             }
         },
 
-        _teardown : function () {
+        destroy : function () {
 
             // Unbind any events that were bound at _create
             this._unbind();
@@ -231,12 +232,12 @@
             this._options = null;   
             this._parameters = null;
             this._instances = null;
-            this._handle_scrollstart_just_fired = null;
-            this._handle_scrollstop_just_fired = null;
-            this._mousewheel_event_just_fired = null;
-            this._handle_scrollstart_timeout_id = null;
-            this._handle_scrollstop_timeout_id = null;
-            this._mousewheel_timeout_id = null;
+            this._handleScrollStartJustFired = null;
+            this._handleScrollStopJustFired = null;
+            this._mouseWheelEventJustFired = null;
+            this._handleScrollStartTimeoutId = null;
+            this._handleScrollStopTimeoutId = null;
+            this._mouseWheelTimeoutId = null;
             this._widgetState = null;
             this._defaultOptions = null;
             this._defaultSettings = null;
@@ -245,7 +246,7 @@
 
             // For jQuery UI 1.8, destroy must be invoked from the base widget
             // For jQuery UI 1.9, define _destroy instead and don't worry about calling the base widget
-            $.Widget.prototype.destroy.call(this);
+            $.Widget.prototype.destroy.apply( this );
         },
 
         _check : function( threshold ) {
@@ -410,55 +411,61 @@
         },
 
         // Event Handlers
-        _handle_mousewheel_event : function() {
+        _handleMouseWheelEvent : function() {
 
-            if ((!this._mousewheel_event_just_fired) && (!this._handle_scrollstop_just_fired) && (!this._handle_scrollstart_just_fired)) {
+        	//alert("mousewheel event triggered");
 
-                this._mousewheel_event_just_fired = true;
+            if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
+
+                this._mouseWheelEventJustFired = true;
 
                 this._load(this.timeoutOptions.mousewheel);
 
                 var $that = this;
 
-                this._mousewheel_timeout_id = setTimeout(function() {
+                this._mouseWheelTimeoutId = setTimeout(function() {
 
-                    $that._mousewheel_event_just_fired = false;
+                    $that._mouseWheelEventJustFired = false;
 
                 }, 1000);
             }
         },
 
-        _handle_scrollstart : function() {
+        _handleScrollStart : function() {
 
-            if ((!this._mousewheel_event_just_fired) && (!this._handle_scrollstop_just_fired) && (!this._handle_scrollstart_just_fired)) {
+        	//alert("scrollstart event triggered");
 
-                this._handle_scrollstart_just_fired = true;
+            if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
+
+                this._handleScrollStartJustFired = true;
 
                 this._load(this.timeoutOptions.scrollstart);
 
                 var $that = this;
 
-                this._handle_scrollstart_timeout_id = setTimeout(function() {
+                this._handleScrollStartTimeoutId = setTimeout(function() {
 
-                    $that._handle_scrollstart_just_fired = false;
+                    $that._handleScrollStartJustFired = false;
 
                 }, 1200);
             }
         },
         
-        _handle_scrollstop : function() {
+        _handleScrollStop : function() {
 
-            if ((!this._mousewheel_event_just_fired) && (!this._handle_scrollstop_just_fired) && (!this._handle_scrollstart_just_fired)) {
+        	//alert("scrollstop event triggered");
 
-                this._handle_scrollstop_just_fired = true;
+            if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
+
+                this._handleScrollStopJustFired = true;
 
                 this._load(this.timeoutOptions.scrollstop);
 
                 var $that = this;
 
-                this._handle_scrollstop_timeout_id = setTimeout(function() {
+                this._handleScrollStopTimeoutId = setTimeout(function() {
 
-                    $that._handle_scrollstop_just_fired = false;
+                    $that._handleScrollStopJustFired = false;
 
                 }, 1200);
             }
