@@ -10,6 +10,7 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 
 * jQuery 1.7.x (although, jQuery 1.6.4 may work fine - it just hasn't been tested - and, the examples are tailored to jQuery 1.7.x)
 * jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)
+* json2html plugin for jQuery (jquery.json2html-3.0.hackedup.js is recommended so inline functions can be used)
 * Server-side code to handle the AJAX requests
 
 ### Using the LazyLoader widget
