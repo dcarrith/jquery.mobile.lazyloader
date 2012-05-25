@@ -329,7 +329,7 @@ If using raw JSON as the server response and then using jQuery JSON transform te
 }
 ```
 
-The important pieces of the JSON are the count and the html (if responding with read-made html) or the count and json (if responding with raw JSON).  
+The important pieces of the JSON are the count and the html (if responding with ready-made html) or the count and json (if responding with raw JSON).  
 
 The count is used to increment the instance specific count of how many items were "retrieved".  
 
