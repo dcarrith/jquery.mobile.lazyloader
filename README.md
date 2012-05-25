@@ -303,25 +303,25 @@ The server-side resource will then take those parameters and build the JSON resp
 }
 ```
 
-If using raw JSON as the server response and then using jQuery JSON transform templates with json2html, heres what the response would look like:
+If using raw JSON as the server response and then using jQuery JSON transform templates with json2html, heres what the response would look like (refer to the template for the albums page to make sense of some of the inner JSON keys):
 
 ```JavaScript
 { "data" : 
     [{  "count" : "2", 
-        "html" : "  <li class='ui-li-has-thumb'>
-                        <a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'>
-                            <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
-                            <h3 class='ui-li-heading'>On we go</h3>
-                            <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>4</span>
-                        </a>
-                    </li>
-                    <li class='ui-li-has-thumb'>
-                        <a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'>
-                            <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
-                            <h3 class='ui-li-heading'>trodin on</h3>
-                            <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>14</span>
-                        </a>
-                    </li>" 
+        "json" : [
+                    {   "href" : "/artist/Gentleman/album/On%2Bwe%2Bgo/tracks",
+                        "art":"/cache/art/master/9b455cabc0b2c022f4ebde2241ed9d361ae350fc.jpeg", 
+                        "transition":"slide", 
+                        "name":"On we go", 
+                        "theme_buttons":"k", 
+                        "count_bubble_value":"4" 
+                    },{ 
+                        "href" : "/artist/Gentleman/album/trodin%2Bon/tracks", "art":"/cache/art/master/f6b8215b788379fab5dffc0c172aa99cba20d121.jpeg", "transition":"slide", 
+                        "name":"trodin on", 
+                        "theme_buttons":"k", 
+                        "count_bubble_value":"14" 
+                    }
+                ] 
     }] 
 }
 ```
