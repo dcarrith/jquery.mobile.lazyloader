@@ -23,7 +23,10 @@
             // this is whether or not to display count bubbles in the retrieved list items
             'bubbles'       : false,
             // this is for specifying an offset into the list in the case where the client is not in sync with server
-            'offset'        : 0
+            'offset'        : 0,
+            // This is for setting a jQuery transform for use as a json2html template so the lazyloader knows 
+            // how to handle raw JSON responses.  If null at time of load, then lazyloader expects HTML
+            'transform'     : ""
         },
 
         // the parameters enable user defined server variables to be posted along with the ajax call to get more items
@@ -134,15 +137,38 @@
                 this._widgetState.busy = false;
                 this._widgetState.done = false;
 
+                //alert(JSON.stringify(options));
+                //alert(JSON.stringify(this._defaultOptions));
+
                 // Get the defaultSettings and extend / merge / override them with user defined settings 
-                this._settings = $.extend(true, this._defaultSettings, settings);
+                this._settings = $.extend( true, this._settings, this._defaultSettings );
+
+                this._settings = $.extend( true, this._settings, settings );
+
+                //alert(JSON.stringify(settings));
 
                 // Get the defaultParameters and extend / merge / override them with user defined parameters 
-                this.parameters = $.extend(true, this._defaultParameters, parameters);
+                this.parameters = $.extend( true, this.parameters, this._defaultParameters );
+
+                this.parameters = $.extend( true, this.parameters, parameters );
+
+                //alert("before merging anything: "+JSON.stringify(this.options));
 
                 // Get any user defined settings and extend / merge / override them with defaultSettings
-                var newOptions = JSON.stringify($.extend(true, this._defaultOptions, options));
+                this.options = $.extend( true, this.options, this._defaultOptions );
 
+                //alert("after merging _defaultOptions: "+JSON.stringify(this.options));
+
+                // Get any user defined settings and extend / merge / override them with defaultSettings
+                this.options = $.extend( true, this.options, options );
+
+                //alert("after merging passed in options: "+JSON.stringify(this.options));
+
+
+
+                // Get any user defined settings and extend / merge / override them with defaultSettings
+                //var newOptions = JSON.stringify($.extend(true, this._defaultOptions, options));
+                //alert("newOptions: "+newOptions);
                 // Get the pageId for the settings that were passed in by the user
                 var newPageId = settings.pageId;
 
@@ -152,17 +178,20 @@
                     // First check to see if we are already tracking an instance for the page being re-initialized before storing the defaults
                     if (!this._instances[newPageId]) {
 
+                        optionsAsString = JSON.stringify(this.options);
+
                         // Store the merged options object as a new instance for later modifications and retrieval
-                        this._instances[newPageId] = $.parseJSON(newOptions);
+                        this._instances[newPageId] = $.parseJSON(optionsAsString);
                     }
 
+                    //alert(JSON.stringify(this._instances[newPageId]));
                     // Get options that were stored for current page and set the options object so it references correct instance options
-                    this.options = $.extend(true, this._defaultOptions, this._instances[newPageId]);
+                    //this._instances[newPageId] $.extend(true, this.options, this._defaultOptions, this._instances[newPageId]);
                 
                 } else {
 
                     // This should only happen during creation. It will store default options by value in options
-                    this.options = $.parseJSON(newOptions);
+                    //this.options = $.parseJSON(newOptions);
                 }
 
                 // This is the jQuery object (the element on which the widget was called)
@@ -271,11 +300,15 @@
             // Uses the height of browser viewport
             visible_height = $(window).height(); 
 
+            //alert("current_scroll: "+current_scroll+"\ntotal_height: "+total_height+"\nvisible_height: "+visible_height);
+
             return ((total_height - threshold) <= (current_scroll + visible_height));
         },
         
         // Main lazy loader function
         _load : function( timeout ) { 
+
+            //alert("inside _load");
 
             // make sure the plugin is not already lazy loading some items
             if ((!this._widgetState.busy) && (!this._widgetState.done)) {
@@ -284,8 +317,10 @@
 
                 setTimeout(function() {
 
+                    //alert("threshold: "+$that.options.threshold);
+
                     // if the page scroll location is close to the bottom
-                    if ($that._check($that.options.threshold)) {
+                    if ($that._check($that.options.threshold) || (timeout === 0)) {
 
                         $("#"+$that._settings.progressDivId).show($that.timeoutOptions.showprogress, function() {
 
@@ -345,25 +380,99 @@
                                 data: query_string,
                                 success: function(msg){
                                     
+                                    //alert("msg: "+msg);
                                     // The JSON returned should be in the format:
                                     //  { "data" : [{ "count" : "20", "html" : "<html for the next number of items to retrieve>" } ] }
-                                    more    = $.parseJSON(msg);
-                                    count   = more.data[0].count;
-                                    html    = more.data[0].html;
-                                    
+                                    var more                        = $.parseJSON(msg);
+                                    var count                       = more.data[0].count;
+                                    var html                        = "";
+                                    var json                        = "";
+                                    var transform                   = "";
+                                    var mainElementSelector         = "";
+                                    var singleItemElementSelector   = "";
+                                    var bottomElementSelector       = "";
+                                    var $bottomElement              = "";
+
                                     if (count > 0) {
-                                    
-                                        $("#"+$that._settings.ulId+' li').last().before(html);
-                                        $("#"+$that._settings.ulId).listview('refresh');
+
+                                        // TODO: Make these selectors configurable as a widget option
+                                        mainElementSelector = "#"+$that._settings.ulId;
+                                        singleItemElementSelector = "#"+$that._settings.ulId+' li';
+                                        bottomElementSelector = '[data-role="list-divider"]';
+
+                                        $bottomElement = $that._getBottomElement(mainElementSelector, bottomElementSelector);
+
+                                        //alert("bottomElement: "+bottomElement);
+
+                                        if ((typeof more.data[0].html != 'undefined') && (more.data[0].html != '')) {
+                                        
+                                            html = more.data[0].html;
+
+                                            if ($bottomElement) {
+
+                                                $( singleItemElementSelector ).last().before( html );
+
+                                            } else {
+
+                                                //$(singleItemElementSelector).last().append( html );
+                                                //$( html ).appendTo( $(singleItemElementSelector).last() );
+                                                $( mainElementSelector ).append( html );
+                                            } 
+                                        
+                                        } else {
+
+                                            json = more.data[0].json;
+
+                                            if ((typeof json != 'undefined') && (json != '')) { 
+
+                                                if ((typeof $that.options.transform != 'undefined') && ($that.options.transform != '')) {
+
+                                                    transform = $that.options.transform;
+                                                }
+
+                                                //alert("transform: "+JSON.stringify(transform));
+                                                if ($that._instances[$that._settings.pageId]) {
+
+                                                    if ((typeof $that._instances[$that._settings.pageId].transform != 'undefined') && ($that._instances[$that._settings.pageId].transform != '')) {
+
+                                                        transform = $that._instances[$that._settings.pageId].transform;
+                                                        //alert("transform: "+JSON.stringify(transform));
+                                                    }
+                                                }
+
+                                                // first make sure there was a bottom element to work around
+                                                if ($bottomElement) {
+
+                                                    // we need to remove the last li if it's a divider so we can append the retrieved li items
+                                                    //$( "#"+$that._settings.ulId+' li' ).last().remove();
+                                                    $bottomElement.remove();
+                                                }
+
+                                                //alert("template: "+JSON.stringify($that._instances[$that._settings.pageId].transform)+"\n\njson data: "+JSON.stringify(json));
+
+                                                // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
+                                                $( mainElementSelector ).json2html( json, $that._instances[$that._settings.pageId].transform );
+                                                
+                                                // first make sure there was a list-divider
+                                                if ($bottomElement) {
+
+                                                    // put the last li item back if it exists (it will exist if it was an list-divider)
+                                                    $( singleItemElementSelector ).last().append( $bottomElement );
+                                                }
+                                            }
+                                        }
+
+                                        // Refresh the listview so it is re-enhanced by JQM
+                                        $( mainElementSelector ).listview( 'refresh' );
 
                                         // Increment the stored retrieved count only by the number of items retrieved
                                         $that._instances[$that._settings.pageId].retrieved += parseInt(count);
 
-                                        if (count < $that.options.retrieve) {
+                                        if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
 
                                             $that._widgetState.done = true;
 
-                                            $that._trigger( "doneloading", {    "type"      : "lazyloaderdone",
+                                            $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
                                                                                 "function"  : "_load",
                                                                                 "pageId"    : $that._settings.pageId, 
                                                                                 "ulId"      : $that._settings.ulId, 
@@ -374,7 +483,7 @@
 
                                         $that._widgetState.done = true;
 
-                                        $that._trigger( "doneloading", {    "type"      : "lazyloaderdone",
+                                        $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
                                                                             "function"  : "_load",
                                                                             "pageId"    : $that._settings.pageId, 
                                                                             "ulId"      : $that._settings.ulId, 
@@ -384,7 +493,13 @@
                                     $("#"+$that._settings.progressDivId).hide(250, function() {
 
                                         $that._widgetState.busy = false;
-                                    });            
+                                    }); 
+
+                                    $that._trigger( "doneloading", {        "type"      : "lazyloaderdoneloading",
+                                                                            "function"  : "_load",
+                                                                            "pageId"    : $that._settings.pageId, 
+                                                                            "ulId"      : $that._settings.ulId, 
+                                                                            "loaded"    : $that.options.retrieved } );       
                                 },
                                 error: function(msg){
 
@@ -410,6 +525,38 @@
                 
                 //alert("$that._widgetState.busy: "+$that._widgetState.busy+"\n$that._widgetState.done: "+$that._widgetState.done);
             }
+        },
+
+        _getBottomElement : function (mainElementSelector, bottomElementSelector) {
+
+            // we will be removing the last li if it's a divider, so we need to store it for later
+            //$lastLi = $( "#"+$that._settings.ulId+' li' ).last();
+            var $bottomElement = $( mainElementSelector ).find( bottomElementSelector );
+            
+            switch ($bottomElement.length) {
+
+                case 2 :
+                    $bottomElement = $bottomElement.last();
+                    break;
+                case 1 : // the assumption is that this must be the heading list-divider
+                case 0 : // if there aren't any list-dividers, then nothing to remove
+                default : // so, null it out so we know we don't need to remove anything
+                    $bottomElement = null;
+                    break;
+            }
+
+            // determine if there is a bottom element we need to worry about when appending the retrieved items
+            if (    (typeof $bottomElement  != 'undefined') && 
+                    (       $bottomElement  != null)        && 
+                    (       $bottomElement  != '')          && 
+                    (       $bottomElement  != 'null')  ) {
+
+                return $bottomElement;
+
+            } else {
+
+                return false;
+            }         
         },
 
         // Event Handlers
