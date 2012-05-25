@@ -66,12 +66,25 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
      */
     $( "#index" ).lazyloader( "reset", "albums" );
 
+    // Use this template if not using count bubbles
+    /*var transform = { "tag":"li", "children" : [
+                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"${name}" } 
+                    ]};*/
+
+    // Use this template if using count bubbles
+    var transform = { "tag":"li", "children" : [
+                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"${name}", "children" : [
+                            { "tag":"span", "class":"ui-li-count ui-btn-up-${theme_buttons} ui-btn-corner-all", "html":"${count_bubble_value}" }
+                        ]} 
+                    ]};
+
     // Set up the variable options to pass to the lazyloader reinitialize function
     var options = { "threshold"     : 360,
                     "retrieve"      : 20,
                     "retrieved"     : 20,
                     "bubbles"       : true,
-                    "offset"        : 0 };
+                    "offset"        : 0, 
+                    "transform"     : transform };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "artists",
@@ -96,11 +109,29 @@ Here's an example of how the lazyloader is reinitialized on the albums page.  No
 ```JavaScript
 $('body').on('pageinit', '#albums', function(evt, ui) {
 
+    // Use this template if not using count bubbles
+    /*var transform = { "tag":"li", "class":"ui-li-has-thumb", "children" : [
+                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"", "children" : [
+                            { "tag":"img", "src":"${art}", "class":"ui-li-thumb album-art-img" },
+                            { "tag":"h3", "class":"ui-li-heading", "html":"${name}" }
+                        ]} 
+                    ]};*/
+
+    // Use this template if using count bubbles
+    var transform = { "tag":"li", "class":"ui-li-has-thumb", "children" : [
+                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"", "children" : [
+                            { "tag":"img", "src":"${art}", "class":"ui-li-thumb album-art-img" },
+                            { "tag":"h3", "class":"ui-li-heading", "html":"${name}" },
+                            { "tag":"span", "class":"ui-li-count ui-btn-up-${theme_buttons} ui-btn-corner-all", "html":"${count_bubble_value}" }
+                        ]} 
+                    ]};
+
     // Set up the variable options to pass to the lazyloader reinitialize function
     var options = { "threshold"     : 480,
                     "retrieve"      : 10,
                     "retrieved"     : 10,
-                    "bubbles"       : true };
+                    "bubbles"       : true, 
+                    "transform"     : transform };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "albums",
@@ -272,11 +303,65 @@ The server-side resource will then take those parameters and build the JSON resp
 }
 ```
 
-The important pieces of the JSON are the count and the html.  The count is used to increment the instance specific count of how many items were "retrieved".  The html value is used in the below two lines of the lazyloader widget _load function which appends them to the end of the li items just before the last li (which is likely the divider):
+If using raw JSON as the server response and then using jQuery JSON transform templates with json2html, heres what the response would look like:
 
 ```JavaScript
-$("#"+$that._settings.ulId+' li').last().before(html);
-$("#"+$that._settings.ulId).listview('refresh');
+{ "data" : 
+    [{  "count" : "2", 
+        "html" : "  <li class='ui-li-has-thumb'>
+                        <a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'>
+                            <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
+                            <h3 class='ui-li-heading'>On we go</h3>
+                            <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>4</span>
+                        </a>
+                    </li>
+                    <li class='ui-li-has-thumb'>
+                        <a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'>
+                            <img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' />
+                            <h3 class='ui-li-heading'>trodin on</h3>
+                            <span class='ui-li-count ui-btn-up-k ui-btn-corner-all'>14</span>
+                        </a>
+                    </li>" 
+    }] 
+}
+```
+
+The important pieces of the JSON are the count and the html (if responding with read-made html) or the count and json (if responding with raw JSON).  
+
+The count is used to increment the instance specific count of how many items were "retrieved".  
+
+The html is used in the below two lines of the lazyloader widget _load function which appends them to the end of the li items just before the last li (which is likely the divider).  If there is no "bottomElement" such as a list-divider li, then the html is appended into the mainSelector (in this case, #albumsList, which is the ul element):
+
+```JavaScript
+if ($bottomElement) {
+
+    $( singleItemElementSelector ).last().before( html );
+
+} else {
+
+    $( mainElementSelector ).append( html );
+} 
+```
+
+The JSON is used in a slightly different way for added flexibility.  The default is to expect ready-made HTML, but if there is no ready-made HTML being returned, then the following logic handles the conversion of JSON to HTML and then appends it in a similar manner as with ready-made HTML.  
+
+```JavaScript
+// first make sure there was a bottom element to work around (this is set above)
+if ($bottomElement) {
+
+    // we need to remove the last li if it's a divider so we can append the retrieved li items
+    $bottomElement.remove();
+}
+
+// Transform the json data into HTML using the transform template that was set at re-initialization for this page
+$( mainElementSelector ).json2html( json, $that._instances[$that._settings.pageId].transform );
+
+// first make sure there was a list-divider
+if ($bottomElement) {
+
+    // put the last li item back if it exists (it will exist if it was an list-divider)
+    $( singleItemElementSelector ).last().append( $bottomElement );
+}
 ```
 
 ### Resetting instance variables and clearing the server-side session variables
