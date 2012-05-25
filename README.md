@@ -316,7 +316,9 @@ If using raw JSON as the server response and then using jQuery JSON transform te
                         "theme_buttons":"k", 
                         "count_bubble_value":"4" 
                     },{ 
-                        "href" : "/artist/Gentleman/album/trodin%2Bon/tracks", "art":"/cache/art/master/f6b8215b788379fab5dffc0c172aa99cba20d121.jpeg", "transition":"slide", 
+                        "href" : "/artist/Gentleman/album/trodin%2Bon/tracks",
+                        "art":"/cache/art/master/f6b8215b788379fab5dffc0c172aa99cba20d121.jpeg",
+                        "transition":"slide", 
                         "name":"trodin on", 
                         "theme_buttons":"k", 
                         "count_bubble_value":"14" 
