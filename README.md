@@ -389,7 +389,12 @@ $("body").on("lazyloadercreate", "#index", function ( evt ){
     // this event is triggered after the lazy loader has been initialized
 });
 
-$("body").on("lazyloaderdone", "#index", function ( evt ){
+$("body").on("lazyloaderdoneloading", "#index", function ( evt ){
+
+    // this event is triggered after the lazyloader is done loading a single response
+});
+
+$("body").on("lazyloaderalldone", "#index", function ( evt ){
 
     // this event is triggered after the lazy loader has loaded all items to be loaded
 });
