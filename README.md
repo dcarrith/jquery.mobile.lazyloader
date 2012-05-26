@@ -238,6 +238,12 @@ function scrollDown(section) {
   <tr>
     <td>offset</td><td>0</td><td>This is for specifying an offset into the query for more items.  For example, this is used in the queue page in case tracks are deleted from the queue while there are still items to lazy load.</td>
   </tr>
+  <tr>
+    <td>transform</td><td>transform</td><td>This is for specifying a page specific JSON transform template for use in converting a raw JSON response into HTML with the jQuery plugin <a href="http://json2html.com/">json2html</a></td>
+  </tr>
+  <tr>
+    <td>icanhaz</td><td>icanhaz</td><td>This is for specifying a page specific <a href="http://mustache.github.com/">mustache</a> template for use in converting a raw JSON response into HTML with <a href="http://icanhazjs.com/">ICanHaz.js</a></td>
+  </tr>
 </table>
 
 ### Explanation of available settings:
