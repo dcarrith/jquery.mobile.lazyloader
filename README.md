@@ -15,10 +15,12 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 
 ### Using the LazyLoader widget
 
-First, to use the widget, you must download the main JavaScript file into your JavaScript directory.  Then, simply include the widget file after the core jQuery Mobile JavaScript file:
+First, to use the widget, you must download the main JavaScript file into your JavaScript directory.  Then, simply include the widget file after the core jQuery Mobile JavaScript file and the other dependencies:
 
 ```html
 <script src="includes/js/jquery-1.7.2.min.js"></script>
+<script src="includes/js/jquery.json2html-3.0.hackedup.js"></script>
+<script src="includes/js/ICanHaz.js"></script>
 <script src="includes/js/jquery.mobile-1.1.0.js"></script>
 <script src="includes/js/jquery.mobile.lazyloader-0.9.js"></script>
 ```
