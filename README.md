@@ -79,13 +79,26 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
                         ]} 
                     ]};
 
+    // Use this template if not using count bubbles
+    /*var icanhaz = "   <li>\
+                        <a href='{{ href }}' data-transition='{{ transition }}'>{{ name }}</a>\
+                    </li>";*/
+
+    // Use this template if using count bubbles
+    var icanhaz = " <li>\
+                        <a href='{{ href }}' data-transition='{{ transition }}'>{{ name }}\
+                            <span class='ui-li-count ui-btn-up-{{ theme_buttons }} ui-btn-corner-all'>{{ count_bubble_value }}</span>\
+                        </a>\
+                    </li>";
+
     // Set up the variable options to pass to the lazyloader reinitialize function
     var options = { "threshold"     : 360,
                     "retrieve"      : 20,
                     "retrieved"     : 20,
                     "bubbles"       : true,
                     "offset"        : 0, 
-                    "transform"     : transform };
+                    "transform"     : transform,
+                    "icanhaz"       : icanhaz };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "artists",
@@ -127,12 +140,29 @@ $('body').on('pageinit', '#albums', function(evt, ui) {
                         ]} 
                     ]};
 
+    // Use this template if not using count bubbles
+    /*var icanhaz = "   <li class='ui-li-has-thumb'>\
+                        <a href='{{ href }}' class='ui-link-inherit' data-transition='{{ transition }}'>\
+                            <img src='{{ art }}' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading album-name-heading'>{{ name }}</h3>\
+                        </a>\
+                    </li>";*/
+
+    // Use this template if using count bubbles
+    var icanhaz = " <li class='ui-li-has-thumb'>\
+                        <a href='{{ href }}' class='ui-link-inherit' data-transition='{{ transition }}'>\
+                            <img src='{{ art }}' class='ui-li-thumb album-art-img' />\
+                            <h3 class='ui-li-heading album-name-heading'>{{ name }}</h3>\
+                            <span class='ui-li-count ui-btn-up-{{ theme_buttons }} ui-btn-corner-all'>{{ count_bubble_value }}</span>\
+                        </a>\
+                    </li>";
+
     // Set up the variable options to pass to the lazyloader reinitialize function
     var options = { "threshold"     : 480,
                     "retrieve"      : 10,
                     "retrieved"     : 10,
                     "bubbles"       : true, 
-                    "transform"     : transform };
+                    "transform"     : transform,
+                    "icanhaz"       : icanhaz };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "albums",
@@ -304,7 +334,7 @@ The server-side resource will then take those parameters and build the JSON resp
 }
 ```
 
-If using raw JSON as the server response and then using jQuery JSON transform templates with json2html, heres what the response would look like (refer to the template for the albums page to make sense of some of the inner JSON keys):
+If using raw JSON as the server response and then using jQuery JSON transform templates with json2html or mustache templates with the ICanHaz plugin, heres what the response would look like (refer to the template for the albums page to make sense of some of the inner JSON keys):
 
 ```JavaScript
 { "data" : 
@@ -346,24 +376,57 @@ if ($bottomElement) {
 } 
 ```
 
-The JSON is used in a slightly different way for added flexibility.  The default is to expect ready-made HTML, but if there is no ready-made HTML being returned, then the following logic handles the conversion of JSON to HTML and then appends it in a similar manner as with ready-made HTML.  
+The JSON is used in a slightly different way for added flexibility.  The default is to expect ready-made HTML, but if there is no ready-made HTML being returned, then the following logic handles the conversion of JSON to HTML and then appends it in a similar manner as with ready-made HTML.  ICanHaz is the preferred method, so that is checked first, and then json2html.  
 
 ```JavaScript
-// first make sure there was a bottom element to work around (this is set above)
-if ($bottomElement) {
+// If ICanHaz, then have some
+if (icanhaz != "") {
 
-    // we need to remove the last li if it's a divider so we can append the retrieved li items
-    $bottomElement.remove();
-}
+    // Add the icanhaz template for this page
+    ich.addTemplate("listitem", icanhaz);
 
-// Transform the json data into HTML using the transform template that was set at re-initialization for this page
-$( mainElementSelector ).json2html( json, $that._instances[$that._settings.pageId].transform );
+    // Loop through the JSON records
+    for( i=0; i<json.length; i++ ) {
 
-// first make sure there was a list-divider
-if ($bottomElement) {
+        // Convert the json record to HTML with icanhaz
+        var item = ich.listitem(json[i], true);
 
-    // put the last li item back if it exists (it will exist if it was an list-divider)
-    $( singleItemElementSelector ).last().append( $bottomElement );
+        // Append the item HTML onto the main HTML string
+        html += item;
+    }
+
+    ich.clearAll();
+
+    if ($bottomElement) {
+
+        $( singleItemElementSelector ).last().before( html );
+
+    } else {
+
+        $( mainElementSelector ).append( html );
+    }
+
+} else {
+
+    if (transform != "") {
+
+        // first make sure there was a bottom element to work around
+        if ($bottomElement) {
+
+            // we need to remove the last li if it's a divider so we can append the retrieved li items
+            $bottomElement.remove();
+        }
+
+        // Transform json into HTML using the transform template that was set at re-initialization for this page
+        $( mainElementSelector ).json2html( json, transform );
+
+        // first make sure there was a list-divider
+        if ($bottomElement) {
+
+            // put the last li item back if it exists (it will exist if it was an list-divider)
+            $( singleItemElementSelector ).last().append( $bottomElement );
+        }
+    }
 }
 ```
 
