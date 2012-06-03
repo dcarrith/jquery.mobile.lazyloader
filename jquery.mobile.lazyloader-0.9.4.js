@@ -283,165 +283,112 @@
 
             //alert("inside _load");
 
-            // make sure the plugin is not already lazy loading some items
-            if ((!this._widgetState.busy) && (!this._widgetState.done)) {
+            //alert("$('.ui-page-active').attr('id'): "+$('.ui-page-active').attr('id'));
 
-                $that = this;
+            if ((typeof this._settings.pageId != undefined) && (this._settings.pageId != '')) {
+            
+                //alert("this._settings.pageId: "+this._settings.pageId);
+                // we only want to proceed with this function logic if the lazyloader is currently initialized for the active page
+                if ($('.ui-page-active').attr('id') == this._settings.pageId) {
 
-                setTimeout(function() {
+                    // make sure the plugin is not already lazy loading some items
+                    if ((!this._widgetState.busy) && (!this._widgetState.done)) {
 
-                    //alert("threshold: "+$that.options.threshold);
+                        $that = this;
 
-                    // if the page scroll location is close to the bottom
-                    if ($that._check($that.options.threshold) || (timeout === 0)) {
+                        setTimeout(function() {
 
-                        $("#"+$that._settings.progressDivId).show($that.timeoutOptions.showprogress, function() {
+                            //alert("threshold: "+$that.options.threshold);
 
-                            if ($that._instances[$that._settings.pageId]) {
+                            // if the page scroll location is close to the bottom
+                            if ($that._check($that.options.threshold) || (timeout === 0)) {
 
-                                $that.parameters.retrieve = $that._instances[$that._settings.pageId].retrieve;
-                                $that.parameters.retrieved = $that._instances[$that._settings.pageId].retrieved;
-                                $that.parameters.offset = $that._instances[$that._settings.pageId].offset;
+                                $("#"+$that._settings.progressDivId).show($that.timeoutOptions.showprogress, function() {
 
-                            } else {
+                                    if ($that._instances[$that._settings.pageId]) {
 
-                                $that.parameters.retrieve = $that.options.retrieve;
-                                $that.parameters.retrieved = $that.options.retrieved;
-                                $that.parameters.offset = $that.options.offset;
-                            }
+                                        $that.parameters.retrieve = $that._instances[$that._settings.pageId].retrieve;
+                                        $that.parameters.retrieved = $that._instances[$that._settings.pageId].retrieved;
+                                        $that.parameters.offset = $that._instances[$that._settings.pageId].offset;
 
-                            if ((typeof $that._settings.pageId != 'undefined') && ($that._settings.pageId != '')) {
+                                    } else {
 
-                                var hidden_inputs = $("#"+$that._settings.pageId).find('[type="hidden"]');
-
-                                for(i=0; i<hidden_inputs.length; i++) {
-                                    
-                                    var hidden_input = $(hidden_inputs).get(i);
-                                    
-                                    //alert($(hidden_input).attr('id'));
-
-                                    if ((typeof $(hidden_input).attr('id') != 'undefined') && ($(hidden_input).attr('id') != '')) {
-
-                                        $that.parameters[$(hidden_input).attr('id')] = escape($(hidden_input).val());
+                                        $that.parameters.retrieve = $that.options.retrieve;
+                                        $that.parameters.retrieved = $that.options.retrieved;
+                                        $that.parameters.offset = $that.options.offset;
                                     }
-                                }
-                            }
 
-                            //alert(JSON.stringify($that.parameters));
+                                    if ((typeof $that._settings.pageId != 'undefined') && ($that._settings.pageId != '')) {
 
-                            var query_string = "";
-                            var count = 0;
+                                        var hidden_inputs = $("#"+$that._settings.pageId).find('[type="hidden"]');
 
-                            for (var key in $that.parameters) {
+                                        for(i=0; i<hidden_inputs.length; i++) {
+                                            
+                                            var hidden_input = $(hidden_inputs).get(i);
+                                            
+                                            //alert($(hidden_input).attr('id'));
 
-                                if (count == 0) {
-                                    query_string += (key + "=" + $that.parameters[key]);
+                                            if ((typeof $(hidden_input).attr('id') != 'undefined') && ($(hidden_input).attr('id') != '')) {
 
-                                } else {
-                                    query_string += ("&" + key + "=" + $that.parameters[key]);
-                                }
+                                                $that.parameters[$(hidden_input).attr('id')] = escape($(hidden_input).val());
+                                            }
+                                        }
+                                    }
 
-                                count = count+1;
-                            }
-                            
-                            //alert("$that._settings.url: "+$that._settings.moreUrl+"\nquery_string: "+query_string);
+                                    //alert(JSON.stringify($that.parameters));
 
-                            $.ajax({
-                                type: "POST",
-                                url: $that._settings.moreUrl,
-                                async: true,
-                                data: query_string,
-                                success: function(msg){
-                                    
-                                    //alert("msg: "+msg);
-                                    // The JSON returned should be in the format:
-                                    //  { "data" : [{ "count" : "20", "html" : "<html for the next number of items to retrieve>" } ] }
-                                    var more                        = $.parseJSON(msg);
-                                    var count                       = more.data[0].count;
-                                    var html                        = "";
-                                    var json                        = "";
-                                    var transform                   = "";
-                                    var icanhaz                     = "";
-                                    var mainElementSelector         = "";
-                                    var singleItemElementSelector   = "";
-                                    var bottomElementSelector       = "";
-                                    var $bottomElement              = "";
+                                    var query_string = "";
+                                    var count = 0;
 
-                                    if (count > 0) {
+                                    for (var key in $that.parameters) {
 
-                                        // TODO: Make these selectors configurable as a widget option
-                                        mainElementSelector = "#"+$that._settings.ulId;
-                                        singleItemElementSelector = "#"+$that._settings.ulId+' li';
-                                        bottomElementSelector = '[data-role="list-divider"]';
+                                        if (count == 0) {
+                                            query_string += (key + "=" + $that.parameters[key]);
 
-                                        $bottomElement = $that._getBottomElement(mainElementSelector, bottomElementSelector);
-
-                                        //alert("bottomElement: "+bottomElement);
-
-                                        if ((typeof more.data[0].html != 'undefined') && (more.data[0].html != '')) {
-                                        
-                                            html = more.data[0].html;
-
-                                            if ($bottomElement) {
-
-                                                $( singleItemElementSelector ).last().before( html );
-
-                                            } else {
-
-                                                //$(singleItemElementSelector).last().append( html );
-                                                //$( html ).appendTo( $(singleItemElementSelector).last() );
-                                                $( mainElementSelector ).append( html );
-                                            } 
-                                        
                                         } else {
+                                            query_string += ("&" + key + "=" + $that.parameters[key]);
+                                        }
 
-                                            json = more.data[0].json;
+                                        count = count+1;
+                                    }
+                                    
+                                    //alert("$that._settings.url: "+$that._settings.moreUrl+"\nquery_string: "+query_string);
 
-                                            if ((typeof json != 'undefined') && (json != '')) { 
+                                    $.ajax({
+                                        type: "POST",
+                                        url: $that._settings.moreUrl,
+                                        async: true,
+                                        data: query_string,
+                                        success: function(msg){
+                                            
+                                            //alert("msg: "+msg);
+                                            // The JSON returned should be in the format:
+                                            //  { "data" : [{ "count" : "20", "html" : "<html for the next number of items to retrieve>" } ] }
+                                            var more                        = $.parseJSON(msg);
+                                            var count                       = more.data[0].count;
+                                            var html                        = "";
+                                            var json                        = "";
+                                            var transform                   = "";
+                                            var icanhaz                     = "";
+                                            var mainElementSelector         = "";
+                                            var singleItemElementSelector   = "";
+                                            var bottomElementSelector       = "";
+                                            var $bottomElement              = "";
 
-                                                if ((typeof $that.options.transform != 'undefined') && ($that.options.transform != '')) {
+                                            if (count > 0) {
 
-                                                    transform = $that.options.transform;
-                                                }
+                                                // TODO: Make these selectors configurable as a widget option
+                                                mainElementSelector = "#"+$that._settings.ulId;
+                                                singleItemElementSelector = "#"+$that._settings.ulId+' li';
+                                                bottomElementSelector = '[data-role="list-divider"]';
 
-                                                if ($that._instances[$that._settings.pageId]) {
+                                                $bottomElement = $that._getBottomElement(mainElementSelector, bottomElementSelector);
 
-                                                    if ((typeof $that._instances[$that._settings.pageId].transform != 'undefined') && ($that._instances[$that._settings.pageId].transform != '')) {
+                                                //alert("bottomElement: "+bottomElement);
 
-                                                        transform = $that._instances[$that._settings.pageId].transform;
-                                                    }
-                                                }
-
-                                                if ((typeof $that.options.icanhaz != 'undefined') && ($that.options.icanhaz != '')) {
-
-                                                    icanhaz = $that.options.icanhaz;
-                                                }
-
-                                                if ($that._instances[$that._settings.pageId]) {
-
-                                                    if ((typeof $that._instances[$that._settings.pageId].icanhaz != 'undefined') && ($that._instances[$that._settings.pageId].icanhaz != '')) {
-
-                                                        icanhaz = $that._instances[$that._settings.pageId].icanhaz;
-                                                    }
-                                                }
-
-                                                // If ICanHaz, then have some
-                                                if (icanhaz != "") {
-
-                                                    // Add the icanhaz template for this page
-                                                    ich.addTemplate("listitem", icanhaz);
-
-                                                    // Loop through the JSON records
-                                                    for( i=0; i<json.length; i++ ) {
-
-                                                        // Convert the json record to HTML with icanhaz
-                                                        var item = ich.listitem(json[i], true);
-
-                                                        // Append the item HTML onto the main HTML string
-                                                        html += item;
-                                                    }
-
-                                                    ich.clearAll();
+                                                if ((typeof more.data[0].html != 'undefined') && (more.data[0].html != '')) {
+                                                
+                                                    html = more.data[0].html;
 
                                                     if ($bottomElement) {
 
@@ -449,99 +396,172 @@
 
                                                     } else {
 
+                                                        //$(singleItemElementSelector).last().append( html );
+                                                        //$( html ).appendTo( $(singleItemElementSelector).last() );
                                                         $( mainElementSelector ).append( html );
-                                                    }
-
+                                                    } 
+                                                
                                                 } else {
 
-                                                    if (transform != "") {
+                                                    json = more.data[0].json;
 
-                                                        // first make sure there was a bottom element to work around
-                                                        if ($bottomElement) {
+                                                    if ((typeof json != 'undefined') && (json != '')) { 
 
-                                                            // we need to remove the last li if it's a divider so we can append the retrieved li items
-                                                            //$( "#"+$that._settings.ulId+' li' ).last().remove();
-                                                            $bottomElement.remove();
+                                                        if ((typeof $that.options.transform != 'undefined') && ($that.options.transform != '')) {
+
+                                                            transform = $that.options.transform;
                                                         }
 
-                                                        //alert("template: "+JSON.stringify($that._instances[$that._settings.pageId].transform)+"\n\njson data: "+JSON.stringify(json));
+                                                        if ($that._instances[$that._settings.pageId]) {
 
-                                                        // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
-                                                        $( mainElementSelector ).json2html( json, transform );
+                                                            if ((typeof $that._instances[$that._settings.pageId].transform != 'undefined') && ($that._instances[$that._settings.pageId].transform != '')) {
 
-                                                        // first make sure there was a list-divider
-                                                        if ($bottomElement) {
+                                                                transform = $that._instances[$that._settings.pageId].transform;
+                                                            }
+                                                        }
 
-                                                            // put the last li item back if it exists (it will exist if it was an list-divider)
-                                                            $( singleItemElementSelector ).last().append( $bottomElement );
+                                                        if ((typeof $that.options.icanhaz != 'undefined') && ($that.options.icanhaz != '')) {
+
+                                                            icanhaz = $that.options.icanhaz;
+                                                        }
+
+                                                        if ($that._instances[$that._settings.pageId]) {
+
+                                                            if ((typeof $that._instances[$that._settings.pageId].icanhaz != 'undefined') && ($that._instances[$that._settings.pageId].icanhaz != '')) {
+
+                                                                icanhaz = $that._instances[$that._settings.pageId].icanhaz;
+                                                            }
+                                                        }
+
+                                                        // If ICanHaz, then have some
+                                                        if (icanhaz != "") {
+
+                                                            // Add the icanhaz template for this page
+                                                            ich.addTemplate("listitem", icanhaz);
+
+                                                            // Loop through the JSON records
+                                                            for( i=0; i<json.length; i++ ) {
+
+                                                                // Convert the json record to HTML with icanhaz
+                                                                var item = ich.listitem(json[i], true);
+
+                                                                // Append the item HTML onto the main HTML string
+                                                                html += item;
+                                                            }
+
+                                                            ich.clearAll();
+
+                                                            if ($bottomElement) {
+
+                                                                $( singleItemElementSelector ).last().before( html );
+
+                                                            } else {
+
+                                                                $( mainElementSelector ).append( html );
+                                                            }
+
+                                                        } else {
+
+                                                            if (transform != "") {
+
+                                                                // first make sure there was a bottom element to work around
+                                                                if ($bottomElement) {
+
+                                                                    // we need to remove the last li if it's a divider so we can append the retrieved li items
+                                                                    //$( "#"+$that._settings.ulId+' li' ).last().remove();
+                                                                    $bottomElement.remove();
+                                                                }
+
+                                                                //alert("template: "+JSON.stringify($that._instances[$that._settings.pageId].transform)+"\n\njson data: "+JSON.stringify(json));
+
+                                                                // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
+                                                                $( mainElementSelector ).json2html( json, transform );
+
+                                                                // first make sure there was a list-divider
+                                                                if ($bottomElement) {
+
+                                                                    // put the last li item back if it exists (it will exist if it was an list-divider)
+                                                                    $( singleItemElementSelector ).last().append( $bottomElement );
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
+
+                                                // Refresh the listview so it is re-enhanced by JQM
+                                                $( mainElementSelector ).listview( 'refresh' );
+
+                                                // Increment the stored retrieved count only by the number of items retrieved
+                                                $that._instances[$that._settings.pageId].retrieved += parseInt(count);
+
+                                                if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
+
+                                                    $that._widgetState.done = true;
+
+                                                    $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
+                                                                                        "function"  : "_load",
+                                                                                        "pageId"    : $that._settings.pageId, 
+                                                                                        "ulId"      : $that._settings.ulId, 
+                                                                                        "loaded"    : $that.options.retrieved } );
+                                                }
+
+                                            } else {
+
+                                                $that._widgetState.done = true;
+
+                                                $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
+                                                                                    "function"  : "_load",
+                                                                                    "pageId"    : $that._settings.pageId, 
+                                                                                    "ulId"      : $that._settings.ulId, 
+                                                                                    "loaded"    : $that.options.retrieved } );
                                             }
+
+                                            $("#"+$that._settings.progressDivId).hide(250, function() {
+
+                                                $that._widgetState.busy = false;
+                                            }); 
+
+                                            $that._trigger( "doneloading", {        "type"      : "lazyloaderdoneloading",
+                                                                                    "function"  : "_load",
+                                                                                    "pageId"    : $that._settings.pageId, 
+                                                                                    "ulId"      : $that._settings.ulId, 
+                                                                                    "loaded"    : $that.options.retrieved } );       
+                                        },
+                                        error: function(msg){
+
+                                            $that._trigger( "error", {  "type"      : "lazyloadererror",
+                                                                        "function"  : "_load", 
+                                                                        "message"   : msg,  
+                                                                        "settings"  : $that._settings,
+                                                                        "options"   : $that.options,
+                                                                        "parameters": $that.parameters } );
+
+                                            $("#"+$that._settings.progressDivId).hide(250, function() {
+
+                                                $that._widgetState.busy = false;
+                                            });    
                                         }
+                                    });
+                                });
+                            }
 
-                                        // Refresh the listview so it is re-enhanced by JQM
-                                        $( mainElementSelector ).listview( 'refresh' );
-
-                                        // Increment the stored retrieved count only by the number of items retrieved
-                                        $that._instances[$that._settings.pageId].retrieved += parseInt(count);
-
-                                        if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
-
-                                            $that._widgetState.done = true;
-
-                                            $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
-                                                                                "function"  : "_load",
-                                                                                "pageId"    : $that._settings.pageId, 
-                                                                                "ulId"      : $that._settings.ulId, 
-                                                                                "loaded"    : $that.options.retrieved } );
-                                        }
-
-                                    } else {
-
-                                        $that._widgetState.done = true;
-
-                                        $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
-                                                                            "function"  : "_load",
-                                                                            "pageId"    : $that._settings.pageId, 
-                                                                            "ulId"      : $that._settings.ulId, 
-                                                                            "loaded"    : $that.options.retrieved } );
-                                    }
-
-                                    $("#"+$that._settings.progressDivId).hide(250, function() {
-
-                                        $that._widgetState.busy = false;
-                                    }); 
-
-                                    $that._trigger( "doneloading", {        "type"      : "lazyloaderdoneloading",
-                                                                            "function"  : "_load",
-                                                                            "pageId"    : $that._settings.pageId, 
-                                                                            "ulId"      : $that._settings.ulId, 
-                                                                            "loaded"    : $that.options.retrieved } );       
-                                },
-                                error: function(msg){
-
-                                    $that._trigger( "error", {  "type"      : "lazyloadererror",
-                                                                "function"  : "_load", 
-                                                                "message"   : msg,  
-                                                                "settings"  : $that._settings,
-                                                                "options"   : $that.options,
-                                                                "parameters": $that.parameters } );
-
-                                    $("#"+$that._settings.progressDivId).hide(250, function() {
-
-                                        $that._widgetState.busy = false;
-                                    });    
-                                }
-                            });
-                        });
+                        }, timeout );
+                    
+                    } else {
+                        
+                        //alert("$that._widgetState.busy: "+$that._widgetState.busy+"\n$that._widgetState.done: "+$that._widgetState.done);
                     }
 
-                }, timeout );
-            
-            } else {
-                
-                //alert("$that._widgetState.busy: "+$that._widgetState.busy+"\n$that._widgetState.done: "+$that._widgetState.done);
+                } else {
+
+                    $("#"+this._settings.progressDivId).hide(250, function() {
+
+                        if (typeof this._widgetState != 'undefined') {
+                            
+                            this._widgetState.busy = false;
+                        }
+                    });
+                }
             }
         },
 
@@ -766,6 +786,8 @@
         resetAll : function () {
 
             var $that = this;
+
+            //alert($that._settings.clearUrl);
 
             // clear lazy loading session variables specific to albums (section=albums)
             $.ajax({
