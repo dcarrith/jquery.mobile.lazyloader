@@ -73,6 +73,8 @@
         // This stores the merged object containing _defaultOptions and any overriding options passed in
         //options : null, 
 
+        _moreOutstandingPageId : null,
+
         // This stores the merged object containing _defaultParameters and any overriding options passed in
         parameters : null,
 
@@ -162,8 +164,15 @@
 
                         optionsAsString = JSON.stringify(this.options);
 
+                        settingsAsString = JSON.stringify(this._settings);
+
+                        this._instances[newPageId] = [];
+
                         // Store the merged options object as a new instance for later modifications and retrieval
-                        this._instances[newPageId] = $.parseJSON(optionsAsString);
+                        this._instances[newPageId]['options'] = $.parseJSON(optionsAsString);
+
+                        // Store the merged settings object as a new instance for later retrieval
+                        this._instances[newPageId]['settings'] = $.parseJSON(settingsAsString);
                     }
                 }
 
@@ -189,13 +198,19 @@
 
             } else {
             
-                if ($("#"+this._settings.ulId).attachEvent) {
+                if ((typeof this._settings != 'undefined') && (this._settings != null) && (this._settings != '')) {
 
-                    $(window).bind( "onmousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
+                    if (typeof this._settings.ulId != 'undefined') {
 
-                } else {
+                        if ($("#"+this._settings.ulId).attachEvent) {
 
-                    $(window).bind( "mousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
+                            $(window).bind( "onmousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
+
+                        } else {
+
+                            $(window).bind( "mousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
+                        }
+                    }
                 }
             }
 
@@ -213,14 +228,20 @@
                 $(window).unbind( "DOMMouseScroll", this._handleMouseWheelEvent );
 
             } else {
-            
-                if ($("#"+this._settings.ulId).attachEvent) {
 
-                    $(window).unbind( "onmousewheel", this._handleMouseWheelEvent );
+                if ((typeof this._settings != 'undefined') && (this._settings != null) && (this._settings != '')) {
 
-                } else {
+                    if (typeof this._settings.ulId != 'undefined') {
+                    
+                        if ($("#"+this._settings.ulId).attachEvent) {
 
-                    $(window).unbind( "mousewheel", this._handleMouseWheelEvent );
+                            $(window).unbind( "onmousewheel", this._handleMouseWheelEvent );
+
+                        } else {
+
+                            $(window).unbind( "mousewheel", this._handleMouseWheelEvent );
+                        }
+                    }
                 }
             }
         },
@@ -267,7 +288,7 @@
                 current_scroll = document.body.scrollTop; 
             }
 
-            // Uses the height of HTML document
+            // Uses the height of the page
             total_height = $("#"+this._settings.pageId).height();
 
             // Uses the height of browser viewport
@@ -281,220 +302,232 @@
         // Main lazy loader function
         _load : function( timeout ) { 
 
-            //alert("inside _load");
-
-            //alert("$('.ui-page-active').attr('id'): "+$('.ui-page-active').attr('id'));
-
             if ((typeof this._settings.pageId != undefined) && (this._settings.pageId != '')) {
             
-                //alert("this._settings.pageId: "+this._settings.pageId);
                 // we only want to proceed with this function logic if the lazyloader is currently initialized for the active page
                 if ($('.ui-page-active').attr('id') == this._settings.pageId) {
 
                     // make sure the plugin is not already lazy loading some items
                     if ((!this._widgetState.busy) && (!this._widgetState.done)) {
 
+                        // Set the variable that can be used to make sure the outstanding request for more is for the same instance of the lazyloader
+                        this._moreOutstandingPageId = this._settings.pageId;
+
+                        // Save a reference to this that can be used inside the setTimeout callback
                         $that = this;
 
+                        // Don't try to load anything until the scroll is given some time to get closer to the bottom
                         setTimeout(function() {
 
-                            //alert("threshold: "+$that.options.threshold);
+                            // Make sure the request for more is still for the current page instance of the lazyloader 
+                            // before wasting any time building the parameters and query string and then making the request
+                            if ($that._moreOutstandingPageId == $that._settings.pageId) {
 
-                            // if the page scroll location is close to the bottom
-                            if ($that._check($that.options.threshold) || (timeout === 0)) {
+                                // if the page scroll location is close to the bottom
+                                if ($that._check($that.options.threshold) || (timeout === 0)) {
 
-                                $("#"+$that._settings.progressDivId).show($that.timeoutOptions.showprogress, function() {
+                                    $("#"+$that._settings.progressDivId).show($that.timeoutOptions.showprogress, function() {
 
-                                    if ($that._instances[$that._settings.pageId]) {
+                                        // Default the moreUrl to be the current instance
+                                        moreUrl = $that._settings.moreUrl;
 
-                                        $that.parameters.retrieve = $that._instances[$that._settings.pageId].retrieve;
-                                        $that.parameters.retrieved = $that._instances[$that._settings.pageId].retrieved;
-                                        $that.parameters.offset = $that._instances[$that._settings.pageId].offset;
+                                        var queryString = "";
+                                        var count = 0;
 
-                                    } else {
+                                        if ($that._instances[$that._settings.pageId]) {
 
-                                        $that.parameters.retrieve = $that.options.retrieve;
-                                        $that.parameters.retrieved = $that.options.retrieved;
-                                        $that.parameters.offset = $that.options.offset;
-                                    }
-
-                                    if ((typeof $that._settings.pageId != 'undefined') && ($that._settings.pageId != '')) {
-
-                                        var hidden_inputs = $("#"+$that._settings.pageId).find('[type="hidden"]');
-
-                                        for(i=0; i<hidden_inputs.length; i++) {
-                                            
-                                            var hidden_input = $(hidden_inputs).get(i);
-                                            
-                                            //alert($(hidden_input).attr('id'));
-
-                                            if ((typeof $(hidden_input).attr('id') != 'undefined') && ($(hidden_input).attr('id') != '')) {
-
-                                                $that.parameters[$(hidden_input).attr('id')] = escape($(hidden_input).val());
-                                            }
-                                        }
-                                    }
-
-                                    //alert(JSON.stringify($that.parameters));
-
-                                    var query_string = "";
-                                    var count = 0;
-
-                                    for (var key in $that.parameters) {
-
-                                        if (count == 0) {
-                                            query_string += (key + "=" + $that.parameters[key]);
+                                            $that.parameters.retrieve = $that._instances[$that._settings.pageId]['options'].retrieve;
+                                            $that.parameters.retrieved = $that._instances[$that._settings.pageId]['options'].retrieved;
+                                            $that.parameters.offset = $that._instances[$that._settings.pageId]['options'].offset;
 
                                         } else {
-                                            query_string += ("&" + key + "=" + $that.parameters[key]);
+
+                                            $that.parameters.retrieve = $that.options.retrieve;
+                                            $that.parameters.retrieved = $that.options.retrieved;
+                                            $that.parameters.offset = $that.options.offset;
                                         }
 
-                                        count = count+1;
-                                    }
-                                    
-                                    //alert("$that._settings.url: "+$that._settings.moreUrl+"\nquery_string: "+query_string);
+                                        if ((typeof $that._settings.pageId != 'undefined') && ($that._settings.pageId != '')) {
 
-                                    $.ajax({
-                                        type: "POST",
-                                        url: $that._settings.moreUrl,
-                                        async: true,
-                                        data: query_string,
-                                        success: function(msg){
-                                            
-                                            //alert("msg: "+msg);
-                                            // The JSON returned should be in the format:
-                                            //  { "data" : [{ "count" : "20", "html" : "<html for the next number of items to retrieve>" } ] }
-                                            var more                        = $.parseJSON(msg);
-                                            var count                       = more.data[0].count;
-                                            var html                        = "";
-                                            var json                        = "";
-                                            var transform                   = "";
-                                            var icanhaz                     = "";
-                                            var mainElementSelector         = "";
-                                            var singleItemElementSelector   = "";
-                                            var bottomElementSelector       = "";
-                                            var $bottomElement              = "";
+                                            var hidden_inputs = $("#"+$that._settings.pageId).find('[type="hidden"]');
 
-                                            if (count > 0) {
-
-                                                // TODO: Make these selectors configurable as a widget option
-                                                mainElementSelector = "#"+$that._settings.ulId;
-                                                singleItemElementSelector = "#"+$that._settings.ulId+' li';
-                                                bottomElementSelector = '[data-role="list-divider"]';
-
-                                                $bottomElement = $that._getBottomElement(mainElementSelector, bottomElementSelector);
-
-                                                //alert("bottomElement: "+bottomElement);
-
-                                                if ((typeof more.data[0].html != 'undefined') && (more.data[0].html != '')) {
+                                            for(i=0; i<hidden_inputs.length; i++) {
                                                 
-                                                    html = more.data[0].html;
-
-                                                    if ($bottomElement) {
-
-                                                        $( singleItemElementSelector ).last().before( html );
-
-                                                    } else {
-
-                                                        //$(singleItemElementSelector).last().append( html );
-                                                        //$( html ).appendTo( $(singleItemElementSelector).last() );
-                                                        $( mainElementSelector ).append( html );
-                                                    } 
+                                                var hidden_input = $(hidden_inputs).get(i);
                                                 
-                                                } else {
+                                                if ((typeof $(hidden_input).attr('id') != 'undefined') && ($(hidden_input).attr('id') != '')) {
 
-                                                    json = more.data[0].json;
+                                                    $that.parameters[$(hidden_input).attr('id')] = escape($(hidden_input).val());
+                                                }
+                                            }
+                                        }
 
-                                                    if ((typeof json != 'undefined') && (json != '')) { 
+                                        //alert(JSON.stringify($that.parameters));
 
-                                                        if ((typeof $that.options.transform != 'undefined') && ($that.options.transform != '')) {
+                                        for (var key in $that.parameters) {
 
-                                                            transform = $that.options.transform;
-                                                        }
+                                            if (count == 0) {
+                                                queryString += (key + "=" + $that.parameters[key]);
 
-                                                        if ($that._instances[$that._settings.pageId]) {
+                                            } else {
+                                                queryString += ("&" + key + "=" + $that.parameters[key]);
+                                            }
 
-                                                            if ((typeof $that._instances[$that._settings.pageId].transform != 'undefined') && ($that._instances[$that._settings.pageId].transform != '')) {
+                                            count = count+1;
+                                        }
+                                        
+                                        //alert("moreUrl: "+moreUrl+"\nqueryString: "+queryString);
 
-                                                                transform = $that._instances[$that._settings.pageId].transform;
-                                                            }
-                                                        }
+                                        $.ajax({
+                                            type: "POST",
+                                            url: moreUrl,
+                                            async: true,
+                                            data: queryString,
+                                            success: function(msg){
 
-                                                        if ((typeof $that.options.icanhaz != 'undefined') && ($that.options.icanhaz != '')) {
+                                                //alert("msg: "+msg);
+                                                // The JSON returned should be in the format:
+                                                //  { "data" : [{ "count" : "20", "html" : "<html for the next number of items to retrieve>" } ] }
+                                                var more                        = $.parseJSON(msg);
+                                                var count                       = more.data[0].count;
+                                                var html                        = "";
+                                                var json                        = "";
+                                                var transform                   = "";
+                                                var icanhaz                     = "";
+                                                var mainElementSelector         = "";
+                                                var singleItemElementSelector   = "";
+                                                var bottomElementSelector       = "";
+                                                var $bottomElement              = "";
 
-                                                            icanhaz = $that.options.icanhaz;
-                                                        }
+                                                if (count > 0) {
 
-                                                        if ($that._instances[$that._settings.pageId]) {
+                                                    // TODO: Make these selectors configurable as a widget option
+                                                    mainElementSelector = "#"+$that._settings.ulId;
+                                                    singleItemElementSelector = "#"+$that._settings.ulId+' li';
+                                                    bottomElementSelector = '[data-role="list-divider"]';
 
-                                                            if ((typeof $that._instances[$that._settings.pageId].icanhaz != 'undefined') && ($that._instances[$that._settings.pageId].icanhaz != '')) {
+                                                    $bottomElement = $that._getBottomElement(mainElementSelector, bottomElementSelector);
 
-                                                                icanhaz = $that._instances[$that._settings.pageId].icanhaz;
-                                                            }
-                                                        }
+                                                    if ((typeof more.data[0].html != 'undefined') && (more.data[0].html != '')) {
+                                                    
+                                                        html = more.data[0].html;
 
-                                                        // If ICanHaz, then have some
-                                                        if (icanhaz != "") {
+                                                        if ($bottomElement) {
 
-                                                            // Add the icanhaz template for this page
-                                                            ich.addTemplate("listitem", icanhaz);
-
-                                                            // Loop through the JSON records
-                                                            for( i=0; i<json.length; i++ ) {
-
-                                                                // Convert the json record to HTML with icanhaz
-                                                                var item = ich.listitem(json[i], true);
-
-                                                                // Append the item HTML onto the main HTML string
-                                                                html += item;
-                                                            }
-
-                                                            ich.clearAll();
-
-                                                            if ($bottomElement) {
-
-                                                                $( singleItemElementSelector ).last().before( html );
-
-                                                            } else {
-
-                                                                $( mainElementSelector ).append( html );
-                                                            }
+                                                            $( singleItemElementSelector ).last().before( html );
 
                                                         } else {
 
-                                                            if (transform != "") {
+                                                            //$(singleItemElementSelector).last().append( html );
+                                                            //$( html ).appendTo( $(singleItemElementSelector).last() );
+                                                            $( mainElementSelector ).append( html );
+                                                        } 
+                                                    
+                                                    } else {
 
-                                                                // first make sure there was a bottom element to work around
-                                                                if ($bottomElement) {
+                                                        json = more.data[0].json;
 
-                                                                    // we need to remove the last li if it's a divider so we can append the retrieved li items
-                                                                    //$( "#"+$that._settings.ulId+' li' ).last().remove();
-                                                                    $bottomElement.remove();
+                                                        if ((typeof json != 'undefined') && (json != '')) { 
+
+                                                            if ((typeof $that.options.transform != 'undefined') && ($that.options.transform != '')) {
+
+                                                                transform = $that.options.transform;
+                                                            }
+
+                                                            if ($that._instances[$that._settings.pageId]) {
+
+                                                                if ((typeof $that._instances[$that._settings.pageId]['options'].transform != 'undefined') && ($that._instances[$that._settings.pageId]['options'].transform != '')) {
+
+                                                                    transform = $that._instances[$that._settings.pageId]['options'].transform;
+                                                                }
+                                                            }
+
+                                                            if ((typeof $that.options.icanhaz != 'undefined') && ($that.options.icanhaz != '')) {
+
+                                                                icanhaz = $that.options.icanhaz;
+                                                            }
+
+                                                            if ($that._instances[$that._settings.pageId]) {
+
+                                                                if ((typeof $that._instances[$that._settings.pageId]['options'].icanhaz != 'undefined') && ($that._instances[$that._settings.pageId]['options'].icanhaz != '')) {
+
+                                                                    icanhaz = $that._instances[$that._settings.pageId]['options'].icanhaz;
+                                                                }
+                                                            }
+
+                                                            // If ICanHaz, then have some
+                                                            if (icanhaz != "") {
+
+                                                                // Add the icanhaz template for this page
+                                                                ich.addTemplate("listitem", icanhaz);
+
+                                                                // Loop through the JSON records
+                                                                for( i=0; i<json.length; i++ ) {
+
+                                                                    // Convert the json record to HTML with icanhaz
+                                                                    var item = ich.listitem(json[i], true);
+
+                                                                    // Append the item HTML onto the main HTML string
+                                                                    html += item;
                                                                 }
 
-                                                                //alert("template: "+JSON.stringify($that._instances[$that._settings.pageId].transform)+"\n\njson data: "+JSON.stringify(json));
+                                                                ich.clearAll();
 
-                                                                // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
-                                                                $( mainElementSelector ).json2html( json, transform );
-
-                                                                // first make sure there was a list-divider
                                                                 if ($bottomElement) {
 
-                                                                    // put the last li item back if it exists (it will exist if it was an list-divider)
-                                                                    $( singleItemElementSelector ).last().append( $bottomElement );
+                                                                    $( singleItemElementSelector ).last().before( html );
+
+                                                                } else {
+
+                                                                    $( mainElementSelector ).append( html );
+                                                                }
+
+                                                            } else {
+
+                                                                if (transform != "") {
+
+                                                                    // first make sure there was a bottom element to work around
+                                                                    if ($bottomElement) {
+
+                                                                        // we need to remove the last li if it's a divider so we can append the retrieved li items
+                                                                        //$( "#"+$that._settings.ulId+' li' ).last().remove();
+                                                                        $bottomElement.remove();
+                                                                    }
+
+                                                                    //alert("template: "+JSON.stringify($that._instances[$that._settings.pageId].transform)+"\n\njson data: "+JSON.stringify(json));
+
+                                                                    // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
+                                                                    $( mainElementSelector ).json2html( json, transform );
+
+                                                                    // first make sure there was a list-divider
+                                                                    if ($bottomElement) {
+
+                                                                        // put the last li item back if it exists (it will exist if it was an list-divider)
+                                                                        $( singleItemElementSelector ).last().append( $bottomElement );
+                                                                    }
                                                                 }
                                                             }
                                                         }
                                                     }
-                                                }
 
-                                                // Refresh the listview so it is re-enhanced by JQM
-                                                $( mainElementSelector ).listview( 'refresh' );
+                                                    // Refresh the listview so it is re-enhanced by JQM
+                                                    $( mainElementSelector ).listview( 'refresh' );
 
-                                                // Increment the stored retrieved count only by the number of items retrieved
-                                                $that._instances[$that._settings.pageId].retrieved += parseInt(count);
+                                                    // Increment the stored retrieved count only by the number of items retrieved
+                                                    $that._instances[$that._settings.pageId]['options'].retrieved += parseInt(count);
 
-                                                if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
+                                                    if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
+
+                                                        $that._widgetState.done = true;
+
+                                                        $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
+                                                                                            "function"  : "_load",
+                                                                                            "pageId"    : $that._settings.pageId, 
+                                                                                            "ulId"      : $that._settings.ulId, 
+                                                                                            "loaded"    : $that.options.retrieved } );
+                                                    }
+
+                                                } else {
 
                                                     $that._widgetState.done = true;
 
@@ -503,46 +536,37 @@
                                                                                         "pageId"    : $that._settings.pageId, 
                                                                                         "ulId"      : $that._settings.ulId, 
                                                                                         "loaded"    : $that.options.retrieved } );
+
                                                 }
 
-                                            } else {
+                                                $("#"+$that._settings.progressDivId).hide(250, function() {
 
-                                                $that._widgetState.done = true;
+                                                    $that._widgetState.busy = false;
+                                                }); 
 
-                                                $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
-                                                                                    "function"  : "_load",
-                                                                                    "pageId"    : $that._settings.pageId, 
-                                                                                    "ulId"      : $that._settings.ulId, 
-                                                                                    "loaded"    : $that.options.retrieved } );
+                                                $that._trigger( "doneloading", {        "type"      : "lazyloaderdoneloading",
+                                                                                        "function"  : "_load",
+                                                                                        "pageId"    : $that._settings.pageId, 
+                                                                                        "ulId"      : $that._settings.ulId, 
+                                                                                        "loaded"    : $that.options.retrieved } );
+                                            },
+                                            error: function(msg){
+
+                                                $that._trigger( "error", {  "type"      : "lazyloadererror",
+                                                                            "function"  : "_load", 
+                                                                            "message"   : msg,  
+                                                                            "settings"  : $that._settings,
+                                                                            "options"   : $that.options,
+                                                                            "parameters": $that.parameters } );
+
+                                                $("#"+$that._settings.progressDivId).hide(250, function() {
+
+                                                    $that._widgetState.busy = false;
+                                                });    
                                             }
-
-                                            $("#"+$that._settings.progressDivId).hide(250, function() {
-
-                                                $that._widgetState.busy = false;
-                                            }); 
-
-                                            $that._trigger( "doneloading", {        "type"      : "lazyloaderdoneloading",
-                                                                                    "function"  : "_load",
-                                                                                    "pageId"    : $that._settings.pageId, 
-                                                                                    "ulId"      : $that._settings.ulId, 
-                                                                                    "loaded"    : $that.options.retrieved } );       
-                                        },
-                                        error: function(msg){
-
-                                            $that._trigger( "error", {  "type"      : "lazyloadererror",
-                                                                        "function"  : "_load", 
-                                                                        "message"   : msg,  
-                                                                        "settings"  : $that._settings,
-                                                                        "options"   : $that.options,
-                                                                        "parameters": $that.parameters } );
-
-                                            $("#"+$that._settings.progressDivId).hide(250, function() {
-
-                                                $that._widgetState.busy = false;
-                                            });    
-                                        }
+                                        });
                                     });
-                                });
+                                }
                             }
 
                         }, timeout );
@@ -733,6 +757,8 @@
         },
 
         reset : function( pageId ) {
+
+            //alert("reset was called for pageId: "+pageId);
 
             var $that = this;
 

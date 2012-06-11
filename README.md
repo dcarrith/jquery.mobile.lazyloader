@@ -22,7 +22,7 @@ First, to use the widget, you must download the main JavaScript file into your J
 <script src="includes/js/jquery.json2html-3.0.hackedup.js"></script>
 <script src="includes/js/ICanHaz.js"></script>
 <script src="includes/js/jquery.mobile-1.1.0.js"></script>
-<script src="includes/js/jquery.mobile.lazyloader-0.9.js"></script>
+<script src="includes/js/jquery.mobile.lazyloader.js"></script>
 ```
 
 Then, to instantiate the widget instance, add a pageinit for your main page (in my case the main data-role="page" has an id="index"):  
