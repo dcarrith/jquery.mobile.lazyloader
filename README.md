@@ -459,31 +459,37 @@ The lazyloader triggers several events during certain operations.  Here are exam
 ```JavaScript
 $("body").on("lazyloadercreate", "#index", function ( evt ){
 
-    // this event is triggered after the lazy loader has been initialized
+});
+
+$("body").on("lazyloaderbeforecreate", "#index", function ( evt ){
+
+});
+
+$("body").on("lazyloaderdestroy", "#index", function ( evt ){
+
 });
 
 $("body").on("lazyloaderdoneloading", "#index", function ( evt ){
 
-    // this event is triggered after the lazyloader is done loading a single response
 });
 
 $("body").on("lazyloaderalldone", "#index", function ( evt ){
 
-    // this event is triggered after the lazy loader has loaded all items to be loaded
+});
+
+$("body").on("lazyloaderbusy", "#index", function ( evt ){
+
 });
 
 $("body").on("lazyloadererror", "#index", function ( evt ){
 
-    // this event is triggered if an error occurs in different scenarios
 });
 
 $("body").on("lazyloaderreset", "#index", function ( evt ){
 
-    // this event is triggered after the lazy reset function has completed
 });
 
 $("body").on("lazyloaderresetall", "#index", function ( evt ){
 
-    // this event is triggered after the lazy resetAll function has completed
 });
 ```
