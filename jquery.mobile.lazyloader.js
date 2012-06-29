@@ -47,14 +47,25 @@
 
             // The page id of the page on which the lazyloader widget instance will be running
             "pageId"        : "",
-            // The id of the list which the lazyloader widget instance will lazy loading
-            "ulId"          : "",
+            // The id of the main wrapper element which the lazyloader widget instance will be lazy loading
+            "mainId"        : "",
             // The id of the DIV that should contain the animated gif to indicate more items are being loaded
             "progressDivId" : "",
             // The url of the server side resource to which the lazy loader AJAX call should be directed
             "moreUrl"       : "",
             // The url of the server side resource responsible for clearing server-side session variables to maintain state
             "clearUrl"      : "" 
+        },
+
+        // Create the default selectors that can be overridden during reinitialization
+        _defaultSelectors : {
+
+            // This is the selector of the main element (e.g. the <ul> in the case of a listview)
+            "main"      : 'ul',
+            // This is the selector for a single element of things that are being lazyloaded (e.g. the <li> in the case of a listview)
+            "single"    : 'ul li',
+            // This is the selector for the bottom element that may need to be removed and added back post lazyloading in certain cases
+            "bottom"    : '[data-role="list-divider"]'
         },
 
         // Short circuit event toggles to prevent the handling of multiple events at the same time
@@ -79,7 +90,10 @@
         parameters : null,
 
         // This stores the merged object containing _defaultSettings and any overriding settings passed in
-        _settings : null,  
+        _settings : null,
+
+        // This stores the merged object containing _defaultSelectors and any overriding selectors passed in
+        _selectors : null,
 
         // Timeout values used for varying some of the setTimeout values used in the widget
         timeoutOptions : {
@@ -114,7 +128,7 @@
         _create : function( ) {
 
             // Initialize the widget using the options passed in by the widget constructor
-            this._initialize( this._defaultOptions, this._defaultSettings, this._defaultParameters );
+            this._initialize( this._defaultOptions, this._defaultSettings, this._defaultParameters, this._defaultSelectors );
 
             // Bind events that are needed by this widget
             this._bind();
@@ -134,7 +148,7 @@
             // not used
         },
 
-        _initialize : function( options, settings, parameters ) {
+        _initialize : function( options, settings, parameters, selectors ) {
 
             if ((typeof options != 'undefined') && (options != '')) {
 
@@ -144,6 +158,17 @@
                 // Get the defaultSettings and extend / merge / override them with user defined settings 
                 this._settings = $.extend( true, this._settings, this._defaultSettings );
                 this._settings = $.extend( true, this._settings, settings );
+
+                if (( typeof this._settings.mainId !== 'undefined') && ( this._settings.mainId !== "")) {
+
+                    this._defaultSelectors.main = '#'+this._settings.mainId;
+                    this._defaultSelectors.single = '#'+this._settings.mainId+' li';
+                    this._defaultSelectors.bottom = '[data-role="list-divider"]';
+                }
+
+                // Get the defaultSelectors and extend / merge / override them with user defined selectors 
+                this._selectors = $.extend( true, this._selectors, this._defaultSelectors );
+                this._selectors = $.extend( true, this._selectors, selectors );
 
                 // Get the defaultParameters and extend / merge / override them with user defined parameters 
                 this.parameters = $.extend( true, this.parameters, this._defaultParameters );
@@ -162,10 +187,16 @@
                     // First check to see if we are already tracking an instance for the page being re-initialized before storing the defaults
                     if (!this._instances[newPageId]) {
 
+                        // create a copy to be stored along with the instance
                         optionsAsString = JSON.stringify(this.options);
 
+                        // create a copy to be stored along with the instance
                         settingsAsString = JSON.stringify(this._settings);
 
+                        // create a copy to be stored along with the instance
+                        selectorsAsString = JSON.stringify(this._selectors);
+
+                        // initialize a new object for this newPageId
                         this._instances[newPageId] = [];
 
                         // Store the merged options object as a new instance for later modifications and retrieval
@@ -173,6 +204,9 @@
 
                         // Store the merged settings object as a new instance for later retrieval
                         this._instances[newPageId]['settings'] = $.parseJSON(settingsAsString);
+
+                        // Store the merged selectors object as a new instance for later retrieval
+                        this._instances[newPageId]['selectors'] = $.parseJSON(selectorsAsString);
                     }
                 }
 
@@ -198,11 +232,11 @@
 
             } else {
             
-                if ((typeof this._settings != 'undefined') && (this._settings != null) && (this._settings != '')) {
+                if ((typeof this._selectors != 'undefined') && (this._selectors != null) && (this._selectors != '')) {
 
-                    if (typeof this._settings.ulId != 'undefined') {
+                    if (typeof this._selectors.main != 'undefined') {
 
-                        if ($("#"+this._settings.ulId).attachEvent) {
+                        if ($(this._selectors.main).attachEvent) {
 
                             $(window).bind( "onmousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
 
@@ -229,11 +263,11 @@
 
             } else {
 
-                if ((typeof this._settings != 'undefined') && (this._settings != null) && (this._settings != '')) {
+                if ((typeof this._selectors != 'undefined') && (this._selectors != null) && (this._selectors != '')) {
 
-                    if (typeof this._settings.ulId != 'undefined') {
+                    if (typeof this._selectors.main != 'undefined') {
                     
-                        if ($("#"+this._settings.ulId).attachEvent) {
+                        if ($(this._selectors.main).attachEvent) {
 
                             $(window).unbind( "onmousewheel", this._handleMouseWheelEvent );
 
@@ -402,11 +436,13 @@
                                                 if (count > 0) {
 
                                                     // TODO: Make these selectors configurable as a widget option
-                                                    mainElementSelector = "#"+$that._settings.ulId;
-                                                    singleItemElementSelector = "#"+$that._settings.ulId+' li';
-                                                    bottomElementSelector = '[data-role="list-divider"]';
+                                                    mainElementSelector = $that._selectors.main;
+                                                    singleItemElementSelector = $that._selectors.single;
+                                                    bottomElementSelector = $that._selectors.bottom;
 
-                                                    $bottomElement = $that._getBottomElement(mainElementSelector, bottomElementSelector);
+                                                    //alert("mainElementSelector: "+mainElementSelector+"\nsingleItemElementSelector: "+singleItemElementSelector+"\nbottomElementSelector: "+bottomElementSelector);
+
+                                                    $bottomElement = $that._getBottomElement( mainElementSelector, bottomElementSelector );
 
                                                     if ((typeof more.data[0].html != 'undefined') && (more.data[0].html != '')) {
                                                     
@@ -490,7 +526,7 @@
                                                                     if ($bottomElement) {
 
                                                                         // we need to remove the last li if it's a divider so we can append the retrieved li items
-                                                                        //$( "#"+$that._settings.ulId+' li' ).last().remove();
+                                                                        //$( "#"+$that._settings.mainId+' li' ).last().remove();
                                                                         $bottomElement.remove();
                                                                     }
 
@@ -520,23 +556,16 @@
 
                                                         $that._widgetState.done = true;
 
-                                                        $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
-                                                                                            "function"  : "_load",
-                                                                                            "pageId"    : $that._settings.pageId, 
-                                                                                            "ulId"      : $that._settings.ulId, 
-                                                                                            "loaded"    : $that.options.retrieved } );
+                                                        // trigger an event to announce that the lazyloader is done loading this page
+                                                        $that._triggerEvent( "alldone", "_load" );
                                                     }
 
                                                 } else {
 
                                                     $that._widgetState.done = true;
 
-                                                    $that._trigger( "alldone", {        "type"      : "lazyloaderalldone",
-                                                                                        "function"  : "_load",
-                                                                                        "pageId"    : $that._settings.pageId, 
-                                                                                        "ulId"      : $that._settings.ulId, 
-                                                                                        "loaded"    : $that.options.retrieved } );
-
+                                                    // trigger an event to announce that the lazyloader is done loading this page
+                                                    $that._triggerEvent( "alldone", "_load" );
                                                 }
 
                                                 $("#"+$that._settings.progressDivId).hide(250, function() {
@@ -544,20 +573,13 @@
                                                     $that._widgetState.busy = false;
                                                 }); 
 
-                                                $that._trigger( "doneloading", {        "type"      : "lazyloaderdoneloading",
-                                                                                        "function"  : "_load",
-                                                                                        "pageId"    : $that._settings.pageId, 
-                                                                                        "ulId"      : $that._settings.ulId, 
-                                                                                        "loaded"    : $that.options.retrieved } );
+                                                // trigger an event to announce that the lazyloader is done loading that chunk
+                                                $that._triggerEvent( "doneloading", "_load" );
                                             },
                                             error: function(msg){
 
-                                                $that._trigger( "error", {  "type"      : "lazyloadererror",
-                                                                            "function"  : "_load", 
-                                                                            "message"   : msg,  
-                                                                            "settings"  : $that._settings,
-                                                                            "options"   : $that.options,
-                                                                            "parameters": $that.parameters } );
+                                                // trigger an event to announce that an error occurred during the _load
+                                                $that._triggerEvent( "error", "_load", msg );
 
                                                 $("#"+$that._settings.progressDivId).hide(250, function() {
 
@@ -573,6 +595,21 @@
                     
                     } else {
                         
+                        if (this._widgetState.done) {
+
+                            // trigger an event to announce that the lazyloader is done loading this page
+                            $that._triggerEvent( "alldone", "_load" );
+
+                        } else if (this._widgetState.busy) {
+
+                            // trigger an event to announce that the lazyloader is currently busy loading
+                            $that._triggerEvent( "busy", "_load" );
+
+                        } else {
+
+                            // what happened?
+                        }
+
                         //alert("$that._widgetState.busy: "+$that._widgetState.busy+"\n$that._widgetState.done: "+$that._widgetState.done);
                     }
 
@@ -589,11 +626,10 @@
             }
         },
 
-        _getBottomElement : function (mainElementSelector, bottomElementSelector) {
+        _getBottomElement : function ( mainElementSelector, bottomElementSelector ) {
 
             // we will be removing the last li if it's a divider, so we need to store it for later
-            //$lastLi = $( "#"+$that._settings.ulId+' li' ).last();
-            var $bottomElement = $( mainElementSelector ).find( bottomElementSelector );
+            var $bottomElement = $( mainElementSelector ).last().find( bottomElementSelector );
             
             switch ($bottomElement.length) {
 
@@ -699,9 +735,9 @@
             // we need to make sure the options record being tracked for this instance gets updated too
             if (this._instances[this._settings.pageId]) {
 
-                if ( this._instances[this._settings.pageId][key] ) {
+                if ( this._instances[this._settings.pageId]['options'][key] ) {
 
-                    this._instances[this._settings.pageId][key] = value;
+                    this._instances[this._settings.pageId]['options'][key] = value;
                 }
             }
 
@@ -751,9 +787,14 @@
         },
 
         // Public functions
-        reInitialize : function( options, settings, parameters ) {
+        reInitialize : function( options, settings, parameters, selectors ) {
 
-            this._initialize( options, settings, parameters );
+            options = "" || options;
+            settings = "" || settings;
+            parameters = "" || parameters;
+            selectors = "" || selectors;
+
+            this._initialize( options, settings, parameters, selectors );
         },
 
         reset : function( pageId ) {
@@ -769,39 +810,34 @@
                 url: $that._settings.clearUrl,
                 async: true,
                 data: "section="+pageId,
-                success: function(msg){
+                success: function( msg ){
 
-                    if (parseInt(msg)) {
+                    if ( parseInt( msg ) ) {
 
                         // reinitialize the lazy loader default retrieved value
                         $that.options.retrieved = $that._defaultOptions.retrieved;
 
                         $that._widgetState.done = false;
 
-                        if (typeof $that._instances[pageId] != 'undefined') {
+                        if ( typeof $that._instances[ pageId ] != 'undefined' ) {
                             
                             //alert("deleting $that._instances["+pageId+"]: \n\n"+JSON.stringify($that._instances[pageId]));
                             delete $that._instances[pageId];
                         }
 
-                        $that._trigger( "reset", {  "type"      : "lazyloaderreset",
-                                                    "function"  : "reset",
-                                                    "pageId"    : pageId, 
-                                                    "settings"  : $that._settings,
-                                                    "options"   : $that.options,
-                                                    "parameters": $that.parameters } );
+                        // this is the message to be sent out along with the triggerred event below
+                        var announcement = "All session variables for the '"+pageId+"' page and the lazyloader instance variables have been cleared.";
+
+                        // trigger an event to announce that the reset has completed successfully
+                        $that._triggerEvent( "reset", "reset", announcement );
                     }
                 },
-                error: function(msg){
+                error: function( msg ){
 
-                    $that._trigger( "error", {  "type"      : "lazyloadererror", 
-                                                "function"  : "reset", 
-                                                "message"   : msg,  
-                                                "settings"  : $that._settings,
-                                                "options"   : $that.options,
-                                                "parameters": $that.parameters } );
+                    // trigger an event to announce that an error occurred during the reset
+                    $that._triggerEvent( "error", "reset", msg );
 
-                    $("#"+$that._settings.progressDivId).hide(250, function() {
+                    $( "#"+$that._settings.progressDivId ).hide( 250, function() {
 
                         $that._widgetState.busy = false;
                     });    
@@ -811,46 +847,73 @@
 
         resetAll : function () {
 
+            // save a local reference to the this object
             var $that = this;
 
-            //alert($that._settings.clearUrl);
-
-            // clear lazy loading session variables specific to albums (section=albums)
+            // clear lazy loading session variables for all pages currently being tracked as lazyloader instances
             $.ajax({
 
                 type: "POST",
                 url: $that._settings.clearUrl,
                 async: true,
                 data: "",
-                success: function(msg){
+                success: function( msg ){
 
-                    //alert(msg);
-                    if (parseInt(msg)) {
+                    if ( parseInt( msg ) ) {
 
                         // loop through the array of settings that were saved each time the widget instance was used by a page
-                        for (pageId in $that._instances) {
+                        for ( pageId in $that._instances ) {
 
                             // Remove the instance object stored in _instances
-                            if ($that._instances[pageId]) {
-                                
-                                //alert("deleting $that._instances["+pageId+"]: \n\n"+JSON.stringify($that._instances[pageId]));
-                                delete $that._instances[pageId];
-                            }
+                            delete $that._instances[ pageId ];
                         }
 
                         // reinitialize the lazy loader default retrieved value
                         $that.options.retrieved = $that._defaultOptions.retrieved;
 
+                        // reset the _widgetState variables
                         $that._widgetState.done = false;
                         $that._widgetState.busy = false;
 
-                        $that._trigger( "resetall", {   "type"          : "lazyloaderresetall",
-                                                        "function"      : "resetAll",
-                                                        "_widgetState"  : $that._widgetState, 
-                                                        "_instances"    : $that._instances  } );
+                        // this is the message to be sent out along with the triggerred event below
+                        var announcement = "All session variables for all pages currently being tracked by the lazyloader have been cleared.";
+
+                        // trigger an event to announce that the resetAll has been successfully completed
+                        $that._triggerEvent( "resetall", "resetAll", announcement );
                     }
                 }
             });
+        },
+
+        _triggerEvent : function ( type, caller, message ) {
+
+            message = message || "";
+
+            switch( type ) {
+
+                case 'error' :
+                case 'resetall' :
+
+                    this._trigger( type, {  "type"      : "lazyloader"+type, 
+                                            "function"  : caller, 
+                                            "message"   : message,
+                                            "settings"  : this._settings,
+                                            "options"   : this.options,
+                                            "parameters": this.parameters } );
+                    break;
+
+                default :
+
+                    // alldone, busy, doneloading, reset - all send out the same data 
+
+                    this._trigger( type, {  "type"      : "lazyloader"+type,
+                                            "function"  : caller,
+                                            "message"   : message,
+                                            "pageId"    : this._settings.pageId, 
+                                            "mainId"    : this._settings.mainId, 
+                                            "loaded"    : this.options.retrieved } );
+                    break;
+            }
         }
     });
 
