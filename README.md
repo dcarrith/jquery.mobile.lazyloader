@@ -104,7 +104,7 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "artists",
-                        "ulId"          : "artistsList",
+                        "mainId"        : "artistsList",
                         "progressDivId" : "lazyloaderProgressDiv",
                         "moreUrl"       : "/artists/more",
                         "clearUrl"      : "/home/clear_session" };
@@ -168,7 +168,7 @@ $('body').on('pageinit', '#albums', function(evt, ui) {
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "albums",
-                        "ulId"          : "albumsList",
+                        "mainId"        : "albumsList",
                         "progressDivId" : "lazyloaderProgressDiv",
                         "moreUrl"       : "/albums/more",
                         "clearUrl"      : "/home/clear_session" };
@@ -255,7 +255,7 @@ function scrollDown(section) {
     <td>pageId</td><td>artists</td><td>This specifies the id of the data-role="page" div element of the page containing the listview to lazyload</td>
   </tr>
   <tr>
-    <td>ulId</td><td>artistsList</td><td>This specifies the id of the ul element of the listview to lazyload</td>
+    <td>mainId</td><td>artistsList</td><td>This specifies the id of the ul element of the listview to lazyload</td>
   </tr>
   <tr>
     <td>progressDivId</td><td>lazyloaderProgressDiv</td><td>This specifies the id of the div element containing the lazyloading progress indicator animated gif or whatever</td>
