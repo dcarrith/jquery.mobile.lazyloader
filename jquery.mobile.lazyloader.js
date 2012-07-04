@@ -28,7 +28,9 @@
             // how to handle raw JSON responses.  If null at time of load, then lazyloader expects HTML
             'transform'     : "",
             // This is for setting a mustache template for the icanhaz.js conversion plugin
-            'icanhaz'       : ""
+            'icanhaz'       : "",
+            // This is for the pre-compiled dustjs template
+            'template'      : ""
         },
 
         // the parameters enable user defined server variables to be posted along with the ajax call to get more items
@@ -428,6 +430,7 @@
                                                 var json                        = "";
                                                 var transform                   = "";
                                                 var icanhaz                     = "";
+                                                var template                    = "";
                                                 var mainElementSelector         = "";
                                                 var singleItemElementSelector   = "";
                                                 var bottomElementSelector       = "";
@@ -491,17 +494,52 @@
                                                                 }
                                                             }
 
-                                                            // If ICanHaz, then have some
-                                                            if (icanhaz != "") {
+                                                            if ((typeof $that.options.template != 'undefined') && ($that.options.template != '')) {
+
+                                                                template = $that.options.template;
+                                                            }
+
+                                                            if ($that._instances[$that._settings.pageId]) {
+
+                                                                if ((typeof $that._instances[$that._settings.pageId]['options'].template != 'undefined') && ($that._instances[$that._settings.pageId]['options'].template != '')) {
+
+                                                                    template = $that._instances[$that._settings.pageId]['options'].template;
+                                                                }
+                                                            }
+
+                                                            if ( template !== "" ) {  // If using Dust.js as the templating solution
+
+                                                                dust.loadSource( template );
+
+                                                                // Loop through the JSON records
+                                                                for( i=0; i<json.length; i++ ) {
+
+                                                                    dust.render( "listview", json[i], function(err, item) {
+
+                                                                        // Append the item HTML onto the main HTML string
+                                                                        html += item;
+                                                                    } );
+                                                                }
+
+                                                                if ( $bottomElement ) {
+
+                                                                    $( singleItemElementSelector ).last().before( html );
+
+                                                                } else {
+
+                                                                    $( mainElementSelector ).append( html );
+                                                                }
+
+                                                            } else if ( icanhaz !== "" ) {  // If ICanHaz, then have some
 
                                                                 // Add the icanhaz template for this page
-                                                                ich.addTemplate("listitem", icanhaz);
+                                                                ich.addTemplate( "listitem", icanhaz );
 
                                                                 // Loop through the JSON records
                                                                 for( i=0; i<json.length; i++ ) {
 
                                                                     // Convert the json record to HTML with icanhaz
-                                                                    var item = ich.listitem(json[i], true);
+                                                                    var item = ich.listitem( json[i], true );
 
                                                                     // Append the item HTML onto the main HTML string
                                                                     html += item;
@@ -509,7 +547,7 @@
 
                                                                 ich.clearAll();
 
-                                                                if ($bottomElement) {
+                                                                if ( $bottomElement ) {
 
                                                                     $( singleItemElementSelector ).last().before( html );
 
@@ -520,10 +558,10 @@
 
                                                             } else {
 
-                                                                if (transform != "") {
+                                                                if ( transform !== "" ) {
 
                                                                     // first make sure there was a bottom element to work around
-                                                                    if ($bottomElement) {
+                                                                    if ( $bottomElement ) {
 
                                                                         // we need to remove the last li if it's a divider so we can append the retrieved li items
                                                                         //$( "#"+$that._settings.mainId+' li' ).last().remove();
@@ -536,7 +574,7 @@
                                                                     $( mainElementSelector ).json2html( json, transform );
 
                                                                     // first make sure there was a list-divider
-                                                                    if ($bottomElement) {
+                                                                    if ( $bottomElement ) {
 
                                                                         // put the last li item back if it exists (it will exist if it was an list-divider)
                                                                         $( singleItemElementSelector ).last().append( $bottomElement );
@@ -550,7 +588,7 @@
                                                     $( mainElementSelector ).listview( 'refresh' );
 
                                                     // Increment the stored retrieved count only by the number of items retrieved
-                                                    $that._instances[$that._settings.pageId]['options'].retrieved += parseInt(count);
+                                                    $that._instances[$that._settings.pageId]['options'].retrieved += parseInt( count );
 
                                                     if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
 

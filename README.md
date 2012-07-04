@@ -12,6 +12,7 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 * jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)
 * json2html plugin for jQuery (Use the jquery.json2html-3.0.hackedup.js if you want to use inline functions)
 * ICanHaz.js if you want simple & powerful client-side templating
+* dust-full-0.3.0.js if you want more powerful client-side templating
 * Server-side code to handle the AJAX requests
 
 ### Using the LazyLoader widget
@@ -22,6 +23,7 @@ First, to use the widget, you must download the main JavaScript file into your J
 <script src="includes/js/jquery-1.7.2.min.js"></script>
 <script src="includes/js/jquery.json2html-3.0.hackedup.js"></script>
 <script src="includes/js/ICanHaz.js"></script>
+<script src="includes/js/dust-full-0.3.0.js"></script>
 <script src="includes/js/jquery.mobile-1.1.0.js"></script>
 <script src="includes/js/jquery.mobile.lazyloader.js"></script>
 ```
@@ -94,6 +96,18 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
                         </a>\
                     </li>";
 
+    // Use this template if not using count bubbles
+    /*var template = "<li>\
+              <a href='{href}' data-transition='{transition}'>{name}</a>\
+            </li>";*/
+
+    // Use this template if using count bubbles
+    var template = "<li>\
+              <a href='{href}' data-transition='{transition}'>{name}\
+                <span class='ui-li-count ui-btn-up-{theme_buttons} ui-btn-corner-all'>{count_bubble_value}</span>\
+              </a>\
+            </li>";
+
     // Set up the variable options to pass to the lazyloader reinitialize function
     var options = { "threshold"     : 360,
                     "retrieve"      : 20,
@@ -101,7 +115,8 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
                     "bubbles"       : true,
                     "offset"        : 0, 
                     "transform"     : transform,
-                    "icanhaz"       : icanhaz };
+                    "icanhaz"       : icanhaz,
+                    "template"      : dust.compile( template, "listview" ) };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "artists",
@@ -159,13 +174,30 @@ $('body').on('pageinit', '#albums', function(evt, ui) {
                         </a>\
                     </li>";
 
+    // Use this template if not using count bubbles
+    /*var template = "<li class='ui-li-has-thumb'>\
+              <a href='{href}' class='ui-link-inherit' data-transition='{transition}'>\
+                <img src='{art}' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading album-name-heading'>{name}</h3>\
+              </a>\
+            </li>";*/
+
+    // Use this template if using count bubbles
+    var template = "<li class='ui-li-has-thumb'>\
+              <a href='{href}' class='ui-link-inherit' data-transition='{transition}'>\
+                <img src='{art}' class='ui-li-thumb album-art-img' />\
+                <h3 class='ui-li-heading album-name-heading'>{name}</h3>\
+                <span class='ui-li-count ui-btn-up-{theme_buttons} ui-btn-corner-all'>{count_bubble_value}</span>\
+              </a>\
+            </li>";
+
     // Set up the variable options to pass to the lazyloader reinitialize function
     var options = { "threshold"     : 480,
                     "retrieve"      : 10,
                     "retrieved"     : 10,
                     "bubbles"       : true, 
                     "transform"     : transform,
-                    "icanhaz"       : icanhaz };
+                    "icanhaz"       : icanhaz,
+                    "template"      : dust.compile( template, "listview" ) };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
     var settings = {    "pageId"        : "albums",
@@ -244,6 +276,9 @@ function scrollDown(section) {
   </tr>
   <tr>
     <td>icanhaz</td><td>icanhaz</td><td>This is for specifying a page specific <a href="http://mustache.github.com/">mustache</a> template for use in converting a raw JSON response into HTML with <a href="http://icanhazjs.com/">ICanHaz.js</a></td>
+  </tr>
+  <tr>
+    <td>template</td><td>template</td><td>This is for specifying a page specific <a href="http://akdubya.github.com/dustjs/">{dust}</a> template for use in converting a raw JSON response into HTML with <a href="http://akdubya.github.com/dustjs/">Dust.js</a></td>
   </tr>
 </table>
 
@@ -385,20 +420,42 @@ if ($bottomElement) {
 } 
 ```
 
-The JSON is used in a slightly different way for added flexibility.  The default is to expect ready-made HTML, but if there is no ready-made HTML being returned, then the following logic handles the conversion of JSON to HTML and then appends it in a similar manner as with ready-made HTML.  ICanHaz is the preferred method, so that is checked first, and then json2html.  
+The JSON is used in a slightly different way for added flexibility.  The default is to expect ready-made HTML, but if there is no ready-made HTML being returned, then the following logic handles the conversion of JSON to HTML and then appends it in a similar manner as with ready-made HTML.  Dust is now the preferred method of rendering since it uses pre-compiled templates.  ICanHaz is the next preferred method, and then json2html.  
 
 ```JavaScript
-// If ICanHaz, then have some
-if (icanhaz != "") {
+if ( template !== "" ) {  // If using Dust.js as the templating solution
+
+    dust.loadSource( template );
+
+    // Loop through the JSON records
+    for( i=0; i<json.length; i++ ) {
+
+        dust.render( "listview", json[i], function(err, item) {
+
+            // Append the item HTML onto the main HTML string
+            html += item;
+        } );
+    }
+
+    if ( $bottomElement ) {
+
+        $( singleItemElementSelector ).last().before( html );
+
+    } else {
+
+        $( mainElementSelector ).append( html );
+    }
+
+} else if ( icanhaz !== "" ) {  // If ICanHaz, then have some
 
     // Add the icanhaz template for this page
-    ich.addTemplate("listitem", icanhaz);
+    ich.addTemplate( "listitem", icanhaz );
 
     // Loop through the JSON records
     for( i=0; i<json.length; i++ ) {
 
         // Convert the json record to HTML with icanhaz
-        var item = ich.listitem(json[i], true);
+        var item = ich.listitem( json[i], true );
 
         // Append the item HTML onto the main HTML string
         html += item;
@@ -406,7 +463,7 @@ if (icanhaz != "") {
 
     ich.clearAll();
 
-    if ($bottomElement) {
+    if ( $bottomElement ) {
 
         $( singleItemElementSelector ).last().before( html );
 
@@ -417,20 +474,20 @@ if (icanhaz != "") {
 
 } else {
 
-    if (transform != "") {
+    if ( transform !== "" ) {
 
         // first make sure there was a bottom element to work around
-        if ($bottomElement) {
+        if ( $bottomElement ) {
 
             // we need to remove the last li if it's a divider so we can append the retrieved li items
             $bottomElement.remove();
         }
 
-        // Transform json into HTML using the transform template that was set at re-initialization for this page
+        // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
         $( mainElementSelector ).json2html( json, transform );
 
         // first make sure there was a list-divider
-        if ($bottomElement) {
+        if ( $bottomElement ) {
 
             // put the last li item back if it exists (it will exist if it was an list-divider)
             $( singleItemElementSelector ).last().append( $bottomElement );
