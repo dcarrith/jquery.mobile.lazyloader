@@ -2,15 +2,6 @@
 
     $.widget( "mobile.lazyloader", $.mobile.widget, {
 
-        // The jQuery object containing the element to which the lazy loader instance will be attached
-        $element :  null, 
-
-        // The jQuery object containing the page element that contains the ul to be lazy loaded
-        $page :     null,   
-        
-        // The jQuery object containing the ul element that is to be lazy loaded
-        $ul :       null,  
-
         // Create some default options that can be extended in reinitialization
         _defaultOptions : {
 
@@ -23,14 +14,7 @@
             // this is whether or not to display count bubbles in the retrieved list items
             'bubbles'       : false,
             // this is for specifying an offset into the list in the case where the client is not in sync with server
-            'offset'        : 0,
-            // This is for setting a jQuery transform for use as a json2html template so the lazyloader knows 
-            // how to handle raw JSON responses.  If null at time of load, then lazyloader expects HTML
-            'transform'     : "",
-            // This is for setting a mustache template for the icanhaz.js conversion plugin
-            'icanhaz'       : "",
-            // This is for the pre-compiled dustjs template
-            'template'      : ""
+            'offset'        : 0
         },
 
         // the parameters enable user defined server variables to be posted along with the ajax call to get more items
@@ -48,15 +32,23 @@
         _defaultSettings : {
 
             // The page id of the page on which the lazyloader widget instance will be running
-            "pageId"        : "",
+            "pageId"                : "",
+            // The type of template to be used for transforming JSON to HTML
+            "templateType"          : "",
+            // Flag to indicate whether or not the template has been pre-compiled
+            "templatePrecompiled"   : false,
+            // The id of the script element for the current page on which the lazyloader has been initialized
+            "templateId"            : "",
+            // The template to use for transformation to HTML
+            "template"              : "",
             // The id of the main wrapper element which the lazyloader widget instance will be lazy loading
-            "mainId"        : "",
+            "mainId"                : "",
             // The id of the DIV that should contain the animated gif to indicate more items are being loaded
-            "progressDivId" : "",
+            "progressDivId"         : "",
             // The url of the server side resource to which the lazy loader AJAX call should be directed
-            "moreUrl"       : "",
+            "moreUrl"               : "",
             // The url of the server side resource responsible for clearing server-side session variables to maintain state
-            "clearUrl"      : "" 
+            "clearUrl"              : "" 
         },
 
         // Create the default selectors that can be overridden during reinitialization
@@ -89,7 +81,7 @@
         _moreOutstandingPageId : null,
 
         // This stores the merged object containing _defaultParameters and any overriding options passed in
-        parameters : null,
+        _parameters : null,
 
         // This stores the merged object containing _defaultSettings and any overriding settings passed in
         _settings : null,
@@ -134,16 +126,6 @@
 
             // Bind events that are needed by this widget
             this._bind();
-
-            /*alert(JSON.stringify(this.$element));
-            alert(JSON.stringify(this.$page));
-            alert(JSON.stringify(this.$ul));
-            alert(JSON.stringify(this._widgetState));
-            alert(JSON.stringify(this._defaultSettings));
-            alert(JSON.stringify(this._settings));
-            alert(JSON.stringify(this.options));
-            alert(JSON.stringify(this.parameters));
-            alert(JSON.stringify(this._instances));*/
         },
 
         _init : function () {
@@ -173,8 +155,8 @@
                 this._selectors = $.extend( true, this._selectors, selectors );
 
                 // Get the defaultParameters and extend / merge / override them with user defined parameters 
-                this.parameters = $.extend( true, this.parameters, this._defaultParameters );
-                this.parameters = $.extend( true, this.parameters, parameters );
+                this._parameters = $.extend( true, this._parameters, this._defaultParameters );
+                this._parameters = $.extend( true, this._parameters, parameters );
 
                 // Get any user defined settings and extend / merge / override them with defaultSettings
                 this.options = $.extend( true, this.options, this._defaultOptions );
@@ -191,6 +173,34 @@
 
                         // create a copy to be stored along with the instance
                         optionsAsString = JSON.stringify(this.options);
+
+                        // retrieve the template from the DOM so we can store it along with the instance 
+                        if (( typeof this._settings.templateId != 'undefined' ) && ( this._settings.templateId != '') ) {
+
+                            // retrieve the template from the DOM
+                            var template = $( "#"+this._settings.templateId ).html();
+
+                            var templateType = "";
+
+                            var templatePrecompiled = this._settings.templatePrecompiled;
+
+                            if (( typeof this._settings.templateType != 'undefined' ) && ( this._settings.templateType != '') ) {
+
+                                templateType = this._settings.templateType;
+                            }
+
+                            // Dust templates seem to be the only ones that can be pre-compiled at initialization and then loaded when needed at runtime
+                            if ( ( templateType === "dust" ) && ( template !== "" ) && ( !templatePrecompiled ) ) {
+
+                                // add the pre-compiled template to the settings object
+                                this._settings.template = dust.compile( template, this._settings.templateId );                        
+
+                            } else {
+
+                                // add it to the settings object
+                                this._settings.template = template; 
+                            }
+                        }
 
                         // create a copy to be stored along with the instance
                         settingsAsString = JSON.stringify(this._settings);
@@ -211,15 +221,6 @@
                         this._instances[newPageId]['selectors'] = $.parseJSON(selectorsAsString);
                     }
                 }
-
-                // This is the jQuery object (the element on which the widget was called)
-                this.$element = this.element;
-
-                // This is the jQuery object containing the collection matched by the selector ":jqmData(role='page')"      
-                this.$page = this.$element.parents(":jqmData(role='page')");
-                
-                // This is the jQuery object containing the collection matched by the selector ":jqmData(role='listview')"
-                this.$ul = $(":jqmData(role='listview')");
             }
         },
 
@@ -288,12 +289,10 @@
             this._unbind();
 
             // Null out all properties of this widget
-            this.$element = null;
-            this.$page = null;      
-            this.$ul = null;  
-            this._settings = null; 
-            this.options = null;   
-            this.parameters = null;
+            this.options = null; 
+            this.timeoutOptions = null;
+            this._settings = null;   
+            this._parameters = null;
             this._instances = null;
             this._handleScrollStartJustFired = null;
             this._handleScrollStopJustFired = null;
@@ -305,7 +304,6 @@
             this._defaultOptions = null;
             this._defaultSettings = null;
             this._defaultParameters = null;
-            this.timeoutOptions = null;
 
             // For jQuery UI 1.8, destroy must be invoked from the base widget
             // For jQuery UI 1.9, define _destroy instead and don't worry about calling the base widget
@@ -329,8 +327,6 @@
 
             // Uses the height of browser viewport
             visible_height = $(window).height(); 
-
-            //alert("current_scroll: "+current_scroll+"\ntotal_height: "+total_height+"\nvisible_height: "+visible_height);
 
             return ((total_height - threshold) <= (current_scroll + visible_height));
         },
@@ -356,7 +352,7 @@
                         setTimeout(function() {
 
                             // Make sure the request for more is still for the current page instance of the lazyloader 
-                            // before wasting any time building the parameters and query string and then making the request
+                            // before wasting any time building the _parameters and query string and then making the request
                             if ($that._moreOutstandingPageId == $that._settings.pageId) {
 
                                 // if the page scroll location is close to the bottom
@@ -372,15 +368,15 @@
 
                                         if ($that._instances[$that._settings.pageId]) {
 
-                                            $that.parameters.retrieve = $that._instances[$that._settings.pageId]['options'].retrieve;
-                                            $that.parameters.retrieved = $that._instances[$that._settings.pageId]['options'].retrieved;
-                                            $that.parameters.offset = $that._instances[$that._settings.pageId]['options'].offset;
+                                            $that._parameters.retrieve = $that._instances[$that._settings.pageId]['options'].retrieve;
+                                            $that._parameters.retrieved = $that._instances[$that._settings.pageId]['options'].retrieved;
+                                            $that._parameters.offset = $that._instances[$that._settings.pageId]['options'].offset;
 
                                         } else {
 
-                                            $that.parameters.retrieve = $that.options.retrieve;
-                                            $that.parameters.retrieved = $that.options.retrieved;
-                                            $that.parameters.offset = $that.options.offset;
+                                            $that._parameters.retrieve = $that.options.retrieve;
+                                            $that._parameters.retrieved = $that.options.retrieved;
+                                            $that._parameters.offset = $that.options.offset;
                                         }
 
                                         if ((typeof $that._settings.pageId != 'undefined') && ($that._settings.pageId != '')) {
@@ -393,20 +389,20 @@
                                                 
                                                 if ((typeof $(hidden_input).attr('id') != 'undefined') && ($(hidden_input).attr('id') != '')) {
 
-                                                    $that.parameters[$(hidden_input).attr('id')] = escape($(hidden_input).val());
+                                                    $that._parameters[$(hidden_input).attr('id')] = escape($(hidden_input).val());
                                                 }
                                             }
                                         }
 
-                                        //alert(JSON.stringify($that.parameters));
+                                        //alert(JSON.stringify($that._parameters));
 
-                                        for (var key in $that.parameters) {
+                                        for (var key in $that._parameters) {
 
                                             if (count == 0) {
-                                                queryString += (key + "=" + $that.parameters[key]);
+                                                queryString += (key + "=" + $that._parameters[key]);
 
                                             } else {
-                                                queryString += ("&" + key + "=" + $that.parameters[key]);
+                                                queryString += ("&" + key + "=" + $that._parameters[key]);
                                             }
 
                                             count = count+1;
@@ -421,16 +417,14 @@
                                             data: queryString,
                                             success: function(msg){
 
-                                                //alert("msg: "+msg);
-                                                // The JSON returned should be in the format:
-                                                //  { "data" : [{ "count" : "20", "html" : "<html for the next number of items to retrieve>" } ] }
                                                 var more                        = $.parseJSON(msg);
                                                 var count                       = more.data[0].count;
                                                 var html                        = "";
                                                 var json                        = "";
-                                                var transform                   = "";
-                                                var icanhaz                     = "";
                                                 var template                    = "";
+                                                var templateId                  = "";
+                                                var templateType                = "";
+                                                var templatePrecompiled         = false; 
                                                 var mainElementSelector         = "";
                                                 var singleItemElementSelector   = "";
                                                 var bottomElementSelector       = "";
@@ -438,12 +432,9 @@
 
                                                 if (count > 0) {
 
-                                                    // TODO: Make these selectors configurable as a widget option
                                                     mainElementSelector = $that._selectors.main;
                                                     singleItemElementSelector = $that._selectors.single;
                                                     bottomElementSelector = $that._selectors.bottom;
-
-                                                    //alert("mainElementSelector: "+mainElementSelector+"\nsingleItemElementSelector: "+singleItemElementSelector+"\nbottomElementSelector: "+bottomElementSelector);
 
                                                     $bottomElement = $that._getBottomElement( mainElementSelector, bottomElementSelector );
 
@@ -457,130 +448,166 @@
 
                                                         } else {
 
-                                                            //$(singleItemElementSelector).last().append( html );
-                                                            //$( html ).appendTo( $(singleItemElementSelector).last() );
                                                             $( mainElementSelector ).append( html );
                                                         } 
                                                     
                                                     } else {
 
-                                                        json = more.data[0].json;
+                                                        // Check to see if there is already an instance of this page in memory
+                                                        if ($that._instances[$that._settings.pageId]) {
 
-                                                        if ((typeof json != 'undefined') && (json != '')) { 
+                                                            // If a templateId isn't set, then there's no need to do the other two checks
+                                                            if ((typeof $that._instances[$that._settings.pageId]['settings'].templateId != 'undefined') && ($that._instances[$that._settings.pageId]['settings'].templateId != '')) {
 
-                                                            if ((typeof $that.options.transform != 'undefined') && ($that.options.transform != '')) {
+                                                                templateId = $that._instances[$that._settings.pageId]['settings'].templateId;
+                                                            
+                                                                if ((typeof $that._instances[$that._settings.pageId]['settings'].templateType != 'undefined') && ($that._instances[$that._settings.pageId]['settings'].templateType != '')) {
 
-                                                                transform = $that.options.transform;
-                                                            }
+                                                                    templateType = $that._instances[$that._settings.pageId]['settings'].templateType;
+                                                                }
 
-                                                            if ($that._instances[$that._settings.pageId]) {
+                                                                if ((typeof $that._instances[$that._settings.pageId]['settings'].template != 'undefined') && ($that._instances[$that._settings.pageId]['settings'].template != '')) {
 
-                                                                if ((typeof $that._instances[$that._settings.pageId]['options'].transform != 'undefined') && ($that._instances[$that._settings.pageId]['options'].transform != '')) {
-
-                                                                    transform = $that._instances[$that._settings.pageId]['options'].transform;
+                                                                    template = $that._instances[$that._settings.pageId]['settings'].template;
                                                                 }
                                                             }
 
-                                                            if ((typeof $that.options.icanhaz != 'undefined') && ($that.options.icanhaz != '')) {
+                                                            templatePrecompiled = $that._instances[$that._settings.pageId]['settings'].templatePrecompiled;
+                                                        
+                                                        } else { // This should never happen ... but, just in case
 
-                                                                icanhaz = $that.options.icanhaz;
-                                                            }
+                                                            if (( typeof $that._settings.templateId != 'undefined' ) && ( $that._settings.templateId != '') ) {
 
-                                                            if ($that._instances[$that._settings.pageId]) {
+                                                                templateId = $that._settings.templateId;
 
-                                                                if ((typeof $that._instances[$that._settings.pageId]['options'].icanhaz != 'undefined') && ($that._instances[$that._settings.pageId]['options'].icanhaz != '')) {
+                                                                if (( typeof $that._settings.templateType != 'undefined' ) && ( $that._settings.templateType != '') ) {
 
-                                                                    icanhaz = $that._instances[$that._settings.pageId]['options'].icanhaz;
+                                                                    templateType = $that._settings.templateType;
+                                                                }
+
+                                                                if (( typeof $that._settings.template != 'undefined' ) && ( $that._settings.template != '') ) {
+
+                                                                    template = $that._settings.template;
                                                                 }
                                                             }
 
-                                                            if ((typeof $that.options.template != 'undefined') && ($that.options.template != '')) {
+                                                            templatePrecompiled = $that._settings.templatePrecompiled;
+                                                        }
 
-                                                                template = $that.options.template;
-                                                            }
+                                                        // Just to make sure we got something
+                                                        if ( ( templateType !== "" ) && ( templateId !== "" ) && ( template !== "" ) ) {
 
-                                                            if ($that._instances[$that._settings.pageId]) {
+                                                            // First check to see if json2html is being used since it needs special handling
+                                                            if ( templateType === "json2html" ) {
 
-                                                                if ((typeof $that._instances[$that._settings.pageId]['options'].template != 'undefined') && ($that._instances[$that._settings.pageId]['options'].template != '')) {
+                                                                json = more.data[0].json;
 
-                                                                    template = $that._instances[$that._settings.pageId]['options'].template;
-                                                                }
-                                                            }
+                                                                // first make sure there was a bottom element to work around
+                                                                if ($bottomElement) {
 
-                                                            if ( template !== "" ) {  // If using Dust.js as the templating solution
-
-                                                                dust.loadSource( template );
-
-                                                                // Loop through the JSON records
-                                                                for( i=0; i<json.length; i++ ) {
-
-                                                                    dust.render( "listview", json[i], function(err, item) {
-
-                                                                        // Append the item HTML onto the main HTML string
-                                                                        html += item;
-                                                                    } );
+                                                                    // we need to remove the last li if it's a divider so we can append the retrieved li items
+                                                                    $bottomElement.remove();
                                                                 }
 
-                                                                if ( $bottomElement ) {
+                                                                // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
+                                                                $( mainElementSelector ).json2html( json, $.parseJSON( template ) );
 
-                                                                    $( singleItemElementSelector ).last().before( html );
+                                                                // first make sure there was a list-divider
+                                                                if ($bottomElement) {
 
-                                                                } else {
-
-                                                                    $( mainElementSelector ).append( html );
-                                                                }
-
-                                                            } else if ( icanhaz !== "" ) {  // If ICanHaz, then have some
-
-                                                                // Add the icanhaz template for this page
-                                                                ich.addTemplate( "listitem", icanhaz );
-
-                                                                // Loop through the JSON records
-                                                                for( i=0; i<json.length; i++ ) {
-
-                                                                    // Convert the json record to HTML with icanhaz
-                                                                    var item = ich.listitem( json[i], true );
-
-                                                                    // Append the item HTML onto the main HTML string
-                                                                    html += item;
-                                                                }
-
-                                                                ich.clearAll();
-
-                                                                if ( $bottomElement ) {
-
-                                                                    $( singleItemElementSelector ).last().before( html );
-
-                                                                } else {
-
-                                                                    $( mainElementSelector ).append( html );
+                                                                    // put the last li item back if it exists (it will exist if it was an list-divider)
+                                                                    $( singleItemElementSelector ).last().append( $bottomElement );
                                                                 }
 
                                                             } else {
 
-                                                                if ( transform !== "" ) {
+                                                                json = more.data[0];
 
-                                                                    // first make sure there was a bottom element to work around
-                                                                    if ( $bottomElement ) {
+                                                                switch( templateType ) {
 
-                                                                        // we need to remove the last li if it's a divider so we can append the retrieved li items
-                                                                        //$( "#"+$that._settings.mainId+' li' ).last().remove();
-                                                                        $bottomElement.remove();
-                                                                    }
+                                                                    case 'handlebars' :
 
-                                                                    //alert("template: "+JSON.stringify($that._instances[$that._settings.pageId].transform)+"\n\njson data: "+JSON.stringify(json));
+                                                                        if ( templatePrecompiled ) {
 
-                                                                    // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
-                                                                    $( mainElementSelector ).json2html( json, transform );
+                                                                            template = Handlebars.templates[ templateId + '.tmpl']; // your template minus the .js
+                
+                                                                            html = template( json );
 
-                                                                    // first make sure there was a list-divider
-                                                                    if ( $bottomElement ) {
+                                                                        } else {
 
-                                                                        // put the last li item back if it exists (it will exist if it was an list-divider)
-                                                                        $( singleItemElementSelector ).last().append( $bottomElement );
-                                                                    }
+                                                                            template = Handlebars.compile( template );
+
+                                                                            html = template( json );
+                                                                        }
+
+                                                                        break;
+
+                                                                    case 'icanhaz' :
+
+                                                                        // Add the icanhaz template for this page
+                                                                        ich.addTemplate( "listitem", template );
+
+                                                                        // Convert the json record to HTML with icanhaz
+                                                                        html = ich.listitem( json, true );
+
+                                                                        // Clear the icanhaz cache 
+                                                                        ich.clearAll();
+
+                                                                        break;
+
+                                                                    case 'dust' :
+
+                                                                        if ( templatePrecompiled ) {
+
+                                                                            // Should be no need to load the template source here since it's pre-compiled externally
+
+                                                                            dust.render( templateId, json, function( err, result ) {
+                                                                                // Append the item HTML onto the main HTML string
+                                                                                html = result;
+                                                                            } );
+
+                                                                        } else {
+
+                                                                            // Even if Dust templates aren't pre-compiled in an external script, they are still pre-compiled during initialization
+                                                                            dust.loadSource( template );
+
+                                                                            dust.render( templateId, json, function( err, result ) {
+                                                                                // Append the item HTML onto the main HTML string
+                                                                                html = result;
+                                                                            } );
+                                                                        }
+
+                                                                        break;
+
+                                                                    case 'dot' :
+
+                                                                        template = doT.template( template );
+
+                                                                        // Convert the json data to html with doT.js 
+                                                                        html = template( json );
+
+                                                                        break;
+
+                                                                    default : 
+
+                                                                        // Not sure if it makes sense to have a default here - we should probably raise an error instead
+                                                                        break;
+                                                                }
+
+                                                                // First check for the bottom element to see if we need to insert the html before it
+                                                                if ( $bottomElement ) {
+
+                                                                    $( singleItemElementSelector ).last().before( html );
+
+                                                                } else { // we can just append it
+
+                                                                    $( mainElementSelector ).append( html );
                                                                 }
                                                             }
+
+                                                        } else {
+
+                                                            // raise an error
                                                         }
                                                     }
 
@@ -588,7 +615,7 @@
                                                     $( mainElementSelector ).listview( 'refresh' );
 
                                                     // Increment the stored retrieved count only by the number of items retrieved
-                                                    $that._instances[$that._settings.pageId]['options'].retrieved += parseInt( count );
+                                                    $that._instances[$that._settings.pageId]['options'].retrieved += parseInt(count);
 
                                                     if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
 
@@ -613,6 +640,7 @@
 
                                                 // trigger an event to announce that the lazyloader is done loading that chunk
                                                 $that._triggerEvent( "doneloading", "_load" );
+
                                             },
                                             error: function(msg){
 
@@ -647,8 +675,6 @@
 
                             // what happened?
                         }
-
-                        //alert("$that._widgetState.busy: "+$that._widgetState.busy+"\n$that._widgetState.done: "+$that._widgetState.done);
                     }
 
                 } else {
@@ -698,8 +724,6 @@
         // Event Handlers
         _handleMouseWheelEvent : function() {
 
-        	//alert("mousewheel event triggered");
-
             if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
 
                 this._mouseWheelEventJustFired = true;
@@ -718,8 +742,6 @@
 
         _handleScrollStart : function() {
 
-        	//alert("scrollstart event triggered");
-
             if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
 
                 this._handleScrollStartJustFired = true;
@@ -737,8 +759,6 @@
         },
         
         _handleScrollStop : function() {
-
-        	//alert("scrollstop event triggered");
 
             if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
 
@@ -787,17 +807,15 @@
 
         refresh : function ( what ) {
 
-        	//alert("what: "+what+"\n\narguments: "+JSON.stringify(arguments));
-
         	if (what == 'parameters') {
 				
 				if (typeof this.options != 'undefined') {
 
-	            	for (var key in this.parameters) {
+	            	for (var key in this._parameters) {
 
 		            	if (typeof this.options[key] != 'undefined') {
 
-		            		this.parameters[key] = this.options[key];
+		            		this._parameters[key] = this.options[key];
 		            	}
 	            	}
 	            }
@@ -808,7 +826,7 @@
 
             	if (typeof this.options[key] != 'undefined') {
 
-            		this.parameters[key] = this.options[key];
+            		this._parameters[key] = this.options[key];
             	}
         	
         	} else {
@@ -817,11 +835,9 @@
         	}
 
             // Get any user defined settings and extend / merge / override them with defaultSettings
-            var newParameters = JSON.stringify(this.parameters);
+            var newParameters = JSON.stringify(this._parameters);
 
-            this.parameters = $.parseJSON(newParameters);
-
-        	//alert(JSON.stringify(this.parameters));
+            this._parameters = $.parseJSON(newParameters);
         },
 
         // Public functions
@@ -836,8 +852,6 @@
         },
 
         reset : function( pageId ) {
-
-            //alert("reset was called for pageId: "+pageId);
 
             var $that = this;
 
@@ -859,7 +873,6 @@
 
                         if ( typeof $that._instances[ pageId ] != 'undefined' ) {
                             
-                            //alert("deleting $that._instances["+pageId+"]: \n\n"+JSON.stringify($that._instances[pageId]));
                             delete $that._instances[pageId];
                         }
 
@@ -937,7 +950,7 @@
                                             "message"   : message,
                                             "settings"  : this._settings,
                                             "options"   : this.options,
-                                            "parameters": this.parameters } );
+                                            "parameters": this._parameters } );
                     break;
 
                 default :

@@ -10,9 +10,13 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 
 * jQuery 1.7.x (although, jQuery 1.6.4 may work fine - it just hasn't been tested - and, the examples are tailored to jQuery 1.7.x)
 * jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)
-* json2html plugin for jQuery (Use the jquery.json2html-3.0.hackedup.js if you want to use inline functions)
-* ICanHaz.js if you want simple & powerful client-side templating
-* dust-full-0.3.0.js if you want more powerful client-side templating
+* jquery.json2html-3.0.js - if using json2html JSON transform templates (Use the jquery.json2html-3.0.hackedup.js if you want to use inline functions)
+* ICanHaz.js - if using ICanHaz templates
+* handlebars-1.0.0.beta.6.js - if using standard Handlebars templates
+* handlebars.runtime.js - if using pre-compiled Handlebars templates
+* dust-full-1.0.0.js - if using Dust templates - note: this is the version maintained by LinkedIn
+* dust-core-1.0.0.js - if using pre-compiled Dust templates - note: this is the version maintained by LinkedIn
+* doT.js - if using doT templates (optimized fork of Underscore.js)
 * Server-side code to handle the AJAX requests
 
 ### Using the LazyLoader widget
@@ -21,9 +25,9 @@ First, to use the widget, you must download the main JavaScript file into your J
 
 ```html
 <script src="includes/js/jquery-1.7.2.min.js"></script>
-<script src="includes/js/jquery.json2html-3.0.hackedup.js"></script>
-<script src="includes/js/ICanHaz.js"></script>
-<script src="includes/js/dust-full-0.3.0.js"></script>
+
+<!-- Template library or libraries can probably go here -->
+
 <script src="includes/js/jquery.mobile-1.1.0.js"></script>
 <script src="includes/js/jquery.mobile.lazyloader.js"></script>
 ```
@@ -72,63 +76,27 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
      */
     $( "#index" ).lazyloader( "reset", "albums" );
 
-    // Use this template if not using count bubbles
-    /*var transform = { "tag":"li", "children" : [
-                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"${name}" } 
-                    ]};*/
-
-    // Use this template if using count bubbles
-    var transform = { "tag":"li", "children" : [
-                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"${name}", "children" : [
-                            { "tag":"span", "class":"ui-li-count ui-btn-up-${theme_buttons} ui-btn-corner-all", "html":"${count_bubble_value}" }
-                        ]} 
-                    ]};
-
-    // Use this template if not using count bubbles
-    /*var icanhaz = "   <li>\
-                        <a href='{{ href }}' data-transition='{{ transition }}'>{{ name }}</a>\
-                    </li>";*/
-
-    // Use this template if using count bubbles
-    var icanhaz = " <li>\
-                        <a href='{{ href }}' data-transition='{{ transition }}'>{{ name }}\
-                            <span class='ui-li-count ui-btn-up-{{ theme_buttons }} ui-btn-corner-all'>{{ count_bubble_value }}</span>\
-                        </a>\
-                    </li>";
-
-    // Use this template if not using count bubbles
-    /*var template = "<li>\
-              <a href='{href}' data-transition='{transition}'>{name}</a>\
-            </li>";*/
-
-    // Use this template if using count bubbles
-    var template = "<li>\
-              <a href='{href}' data-transition='{transition}'>{name}\
-                <span class='ui-li-count ui-btn-up-{theme_buttons} ui-btn-corner-all'>{count_bubble_value}</span>\
-              </a>\
-            </li>";
-
     // Set up the variable options to pass to the lazyloader reinitialize function
-    var options = { "threshold"     : 360,
-                    "retrieve"      : 20,
-                    "retrieved"     : 20,
-                    "bubbles"       : true,
-                    "offset"        : 0, 
-                    "transform"     : transform,
-                    "icanhaz"       : icanhaz,
-                    "template"      : dust.compile( template, "listview" ) };
+    var options = {   "threshold"   : 360,
+                      "retrieve"    : 20,
+                      "retrieved"   : 20,
+                      "bubbles"     : true,
+                      "offset"      : 0 };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
-    var settings = {    "pageId"        : "artists",
-                        "mainId"        : "artistsList",
-                        "progressDivId" : "lazyloaderProgressDiv",
-                        "moreUrl"       : "/artists/more",
-                        "clearUrl"      : "/home/clear_session" };
+    var settings = {  "pageId"                : "artists",
+                      "templateType"          : "dust",
+                      "templateId"            : "artists",
+                      "templatePrecompiled"   : true,
+                      "mainId"                : "artistsList",
+                      "progressDivId"         : "lazyloaderProgressDiv",
+                      "moreUrl"               : "/artists/more",
+                      "clearUrl"              : "/home/clear_session" };
 
     // Set up the post parameters to pass to the lazyloader reinitialize function
-    var parameters = {  "retrieve"      : options.retrieve,
-                        "retrieved"     : options.retrieved,
-                        "offset"        : options.offset };
+    var parameters = {  "retrieve"    : options.retrieve,
+                        "retrieved"   : options.retrieved,
+                        "offset"      : options.offset };
 
     // Reinitialize the lazyloader so that it correctly handles the listview on the artists page
     $( "#index" ).lazyloader( "reInitialize", options, settings, parameters );
@@ -141,75 +109,25 @@ Here's an example of how the lazyloader is reinitialized on the albums page.  No
 ```JavaScript
 $('body').on('pageinit', '#albums', function(evt, ui) {
 
-    // Use this template if not using count bubbles
-    /*var transform = { "tag":"li", "class":"ui-li-has-thumb", "children" : [
-                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"", "children" : [
-                            { "tag":"img", "src":"${art}", "class":"ui-li-thumb album-art-img" },
-                            { "tag":"h3", "class":"ui-li-heading", "html":"${name}" }
-                        ]} 
-                    ]};*/
-
-    // Use this template if using count bubbles
-    var transform = { "tag":"li", "class":"ui-li-has-thumb", "children" : [
-                        { "tag":"a", "href":"${href}", "data-transition":"${transition}", "html":"", "children" : [
-                            { "tag":"img", "src":"${art}", "class":"ui-li-thumb album-art-img" },
-                            { "tag":"h3", "class":"ui-li-heading", "html":"${name}" },
-                            { "tag":"span", "class":"ui-li-count ui-btn-up-${theme_buttons} ui-btn-corner-all", "html":"${count_bubble_value}" }
-                        ]} 
-                    ]};
-
-    // Use this template if not using count bubbles
-    /*var icanhaz = "   <li class='ui-li-has-thumb'>\
-                        <a href='{{ href }}' class='ui-link-inherit' data-transition='{{ transition }}'>\
-                            <img src='{{ art }}' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading album-name-heading'>{{ name }}</h3>\
-                        </a>\
-                    </li>";*/
-
-    // Use this template if using count bubbles
-    var icanhaz = " <li class='ui-li-has-thumb'>\
-                        <a href='{{ href }}' class='ui-link-inherit' data-transition='{{ transition }}'>\
-                            <img src='{{ art }}' class='ui-li-thumb album-art-img' />\
-                            <h3 class='ui-li-heading album-name-heading'>{{ name }}</h3>\
-                            <span class='ui-li-count ui-btn-up-{{ theme_buttons }} ui-btn-corner-all'>{{ count_bubble_value }}</span>\
-                        </a>\
-                    </li>";
-
-    // Use this template if not using count bubbles
-    /*var template = "<li class='ui-li-has-thumb'>\
-              <a href='{href}' class='ui-link-inherit' data-transition='{transition}'>\
-                <img src='{art}' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading album-name-heading'>{name}</h3>\
-              </a>\
-            </li>";*/
-
-    // Use this template if using count bubbles
-    var template = "<li class='ui-li-has-thumb'>\
-              <a href='{href}' class='ui-link-inherit' data-transition='{transition}'>\
-                <img src='{art}' class='ui-li-thumb album-art-img' />\
-                <h3 class='ui-li-heading album-name-heading'>{name}</h3>\
-                <span class='ui-li-count ui-btn-up-{theme_buttons} ui-btn-corner-all'>{count_bubble_value}</span>\
-              </a>\
-            </li>";
-
-    // Set up the variable options to pass to the lazyloader reinitialize function
-    var options = { "threshold"     : 480,
-                    "retrieve"      : 10,
-                    "retrieved"     : 10,
-                    "bubbles"       : true, 
-                    "transform"     : transform,
-                    "icanhaz"       : icanhaz,
-                    "template"      : dust.compile( template, "listview" ) };
+    var options = { "threshold"   : 480,
+                    "retrieve"    : 10,
+                    "retrieved"   : 10,
+                    "bubbles"     : true };
 
     // Set up the page specific settings to pass to the lazyloader reinitialize function
-    var settings = {    "pageId"        : "albums",
-                        "mainId"        : "albumsList",
-                        "progressDivId" : "lazyloaderProgressDiv",
-                        "moreUrl"       : "/albums/more",
-                        "clearUrl"      : "/home/clear_session" };
+    var settings = {  "pageId"                : "albums",
+                      "templateType"          : "dust",
+                      "templateId"            : "albums",
+                      "templatePrecompiled"   : true,
+                      "mainId"                : "albumsList",
+                      "progressDivId"         : "lazyloaderProgressDiv",
+                      "moreUrl"               : "/albums/more",
+                      "clearUrl"              : "/home/clear_session" };
 
     // Set up the post parameters to pass to the lazyloader reinitialize function
-    var parameters = {  "retrieve"      : options.retrieve,
-                        "retrieved"     : options.retrieved,
-                        "offset"        : options.offset };
+    var parameters = {  "retrieve"    : options.retrieve,
+                        "retrieved"   : options.retrieved,
+                        "offset"      : options.offset };
 
     // Reinitialize the lazyloader so that it correctly handles the listview on the artists page
     $( "#index" ).lazyloader( "reInitialize", options, settings, parameters );
@@ -271,15 +189,6 @@ function scrollDown(section) {
   <tr>
     <td>offset</td><td>0</td><td>This is for specifying an offset into the query for more items.  For example, this is used in the queue page in case tracks are deleted from the queue while there are still items to lazy load.</td>
   </tr>
-  <tr>
-    <td>transform</td><td>transform</td><td>This is for specifying a page specific JSON transform template for use in converting a raw JSON response into HTML with the jQuery plugin <a href="http://json2html.com/">json2html</a></td>
-  </tr>
-  <tr>
-    <td>icanhaz</td><td>icanhaz</td><td>This is for specifying a page specific <a href="http://mustache.github.com/">mustache</a> template for use in converting a raw JSON response into HTML with <a href="http://icanhazjs.com/">ICanHaz.js</a></td>
-  </tr>
-  <tr>
-    <td>template</td><td>template</td><td>This is for specifying a page specific <a href="http://akdubya.github.com/dustjs/">{dust}</a> template for use in converting a raw JSON response into HTML with <a href="http://akdubya.github.com/dustjs/">Dust.js</a></td>
-  </tr>
 </table>
 
 ### Explanation of available settings:
@@ -289,6 +198,15 @@ function scrollDown(section) {
   </tr>
   <tr>
     <td>pageId</td><td>artists</td><td>This specifies the id of the data-role="page" div element of the page containing the listview to lazyload</td>
+  </tr>
+  <tr>
+    <td>templateType</td><td>dust</td><td>This specifies the template library type to use.  Possible values are <a href="http://json2html.com/">json2html</a>, <a href="http://handlebarsjs.com/">handlebars</a>, <a href="http://icanhazjs.com/">icanhaz</a>, <a href="http://akdubya.github.com/dustjs/">dust</a> and <a href="http://olado.github.com/doT/">dot</a></td>
+  </tr>
+  <tr>
+    <td>templateId</td><td>artists</td><td>This specifies the id of the &lt;script&gt; element containing the template.  If templates are loaded externally as pre-compiled templates, then the templateId should be the same name that was assigned to the template when compiled - both internal name (e.g. with Dust) and/or actual filename (e.g. with Handlebars).  Note: only Handlebars and Dust templates are supported as pre-compiled templates.  All other templates should be defined with a &lt;script&gt; element with an id equal to whatever you want to use for templateId.</td>
+  </tr>
+  <tr>
+    <td>templatePrecompiled</td><td>artists</td><td>This a boolean that indicates whether the lazyloader should expect pre-compiled templates for the templateType in use (Note: only Handlebars and Dust templates are supported as pre-compiled templates)</td>
   </tr>
   <tr>
     <td>mainId</td><td>artistsList</td><td>This specifies the id of the ul element of the listview to lazyload</td>
@@ -355,7 +273,7 @@ The lazyloader widget will automatically build the string to use for the POST da
 retrieve=10&retrieved=10&offset=0&param_one=Gentleman
 ```
 
-The server-side resource will then take those parameters and build the JSON response that would look something like this.  For example, if 10 Gentleman albums out of 12 were already showing, then this would be the server response with the last 2 albums:
+The server-side resource will then take those parameters and build the JSON response (which contains ready-made HTML in this case) that would look something like below.  For example, if 10 Gentleman albums out of 12 were already showing, then this would be the server response with the last 2 albums:
 
 ```JavaScript
 { "data" : 
@@ -378,7 +296,22 @@ The server-side resource will then take those parameters and build the JSON resp
 }
 ```
 
-If using raw JSON as the server response and then using jQuery JSON transform templates with json2html or mustache templates with the ICanHaz plugin, heres what the response would look like (refer to the template for the albums page to make sense of some of the inner JSON keys):
+The count is used to increment the instance specific count of how many items were "retrieved".  
+
+The html is used in the below two lines of the lazyloader widget _load function which appends them to the end of the li items just before the last li (which is likely the divider).  If there is no "bottomElement" such as a list-divider li, then the html is appended into the mainSelector (in this case, #albumsList, which is the ul element):
+
+```JavaScript
+if ($bottomElement) {
+
+    $( singleItemElementSelector ).last().before( html );
+
+} else {
+
+    $( mainElementSelector ).append( html );
+} 
+```
+
+If using raw JSON as the server response (rather than including ready-made HTML) the response might look something like this:
 
 ```JavaScript
 { "data" : 
@@ -403,98 +336,34 @@ If using raw JSON as the server response and then using jQuery JSON transform te
 }
 ```
 
-The important pieces of the JSON are the count and the html (if responding with ready-made html) or the count and json (if responding with raw JSON).  
+The count is used to increment the instance specific count of how many items were "retrieved".  The inner JSON piece is then passed to a user-defined template for transformation to HTML.  
 
-The count is used to increment the instance specific count of how many items were "retrieved".  
+Pre-compiled Dust templates are the recommended method of rendering since they are very fast and the template files can be concatonated and minified along with the rest of your site's JavaScript.  Additionally, only the dust core is needed by the client, so overall script size is reduced (the compiler, which is a big chunk of the code, is not needed).  
 
-The html is used in the below two lines of the lazyloader widget _load function which appends them to the end of the li items just before the last li (which is likely the divider).  If there is no "bottomElement" such as a list-divider li, then the html is appended into the mainSelector (in this case, #albumsList, which is the ul element):
-
-```JavaScript
-if ($bottomElement) {
-
-    $( singleItemElementSelector ).last().before( html );
-
-} else {
-
-    $( mainElementSelector ).append( html );
-} 
-```
-
-The JSON is used in a slightly different way for added flexibility.  The default is to expect ready-made HTML, but if there is no ready-made HTML being returned, then the following logic handles the conversion of JSON to HTML and then appends it in a similar manner as with ready-made HTML.  Dust is now the preferred method of rendering since it uses pre-compiled templates.  ICanHaz is the next preferred method, and then json2html.  
+Here's an example of the Dust template for the albums page (before being pre-compiled into usable JavaScript).  The file is stored as albums.tmpl.
 
 ```JavaScript
-if ( template !== "" ) {  // If using Dust.js as the templating solution
-
-    dust.loadSource( template );
-
-    // Loop through the JSON records
-    for( i=0; i<json.length; i++ ) {
-
-        dust.render( "listview", json[i], function(err, item) {
-
-            // Append the item HTML onto the main HTML string
-            html += item;
-        } );
-    }
-
-    if ( $bottomElement ) {
-
-        $( singleItemElementSelector ).last().before( html );
-
-    } else {
-
-        $( mainElementSelector ).append( html );
-    }
-
-} else if ( icanhaz !== "" ) {  // If ICanHaz, then have some
-
-    // Add the icanhaz template for this page
-    ich.addTemplate( "listitem", icanhaz );
-
-    // Loop through the JSON records
-    for( i=0; i<json.length; i++ ) {
-
-        // Convert the json record to HTML with icanhaz
-        var item = ich.listitem( json[i], true );
-
-        // Append the item HTML onto the main HTML string
-        html += item;
-    }
-
-    ich.clearAll();
-
-    if ( $bottomElement ) {
-
-        $( singleItemElementSelector ).last().before( html );
-
-    } else {
-
-        $( mainElementSelector ).append( html );
-    }
-
-} else {
-
-    if ( transform !== "" ) {
-
-        // first make sure there was a bottom element to work around
-        if ( $bottomElement ) {
-
-            // we need to remove the last li if it's a divider so we can append the retrieved li items
-            $bottomElement.remove();
-        }
-
-        // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
-        $( mainElementSelector ).json2html( json, transform );
-
-        // first make sure there was a list-divider
-        if ( $bottomElement ) {
-
-            // put the last li item back if it exists (it will exist if it was an list-divider)
-            $( singleItemElementSelector ).last().append( $bottomElement );
-        }
-    }
-}
+{#json}
+    <li class='ui-li-has-thumb'>
+        <a href='{href}' class='ui-link-inherit' data-transition='{transition}'>
+            <img src='{art}' class='ui-li-thumb album-art-img' />
+            <h3 class='ui-li-heading album-name-heading'>{name}</h3>
+            <span class='ui-li-count ui-btn-up-{theme_buttons} ui-btn-corner-all'>{count_bubble_value}</span>
+            <p class='ui-li-aside ui-li-desc'>{total_length}</p>
+        </a>
+    </li>
+{/json}
 ```
+
+For instructions on pre-compiling Dust templates, see the LinkedIn github page: http://linkedin.github.com/dustjs/ 
+
+Here's the pre-compiled Dust template for the albums page which is stored in an external file named albums.tmpl.js:
+
+```JavaScript
+(function(){dust.register("albums",body_0);function body_0(chk,ctx){return chk.section(ctx.get("json"),ctx,{"block":body_1},null);}function body_1(chk,ctx){return chk.write("<li class='ui-li-has-thumb'><a href='").reference(ctx.get("href"),ctx,"h").write("' class='ui-link-inherit' data-transition='").reference(ctx.get("transition"),ctx,"h").write("'><img src='").reference(ctx.get("art"),ctx,"h").write("' class='ui-li-thumb album-art-img' /><h3 class='ui-li-heading album-name-heading'>").reference(ctx.get("name"),ctx,"h").write("</h3><span class='ui-li-count ui-btn-up-").reference(ctx.get("theme_buttons"),ctx,"h").write(" ui-btn-corner-all'>").reference(ctx.get("count_bubble_value"),ctx,"h").write("</span><p class='ui-li-aside ui-li-desc'>").reference(ctx.get("total_length"),ctx,"h").write("</p></a></li>");}return body_0;})();
+```
+
+That albums.tmpl.js file should then be concatonated and minified and gzipped along with the rest of the site's JavaScript.  
 
 ### Resetting instance variables and clearing the server-side session variables
 
