@@ -206,7 +206,7 @@ function scrollDown(section) {
     <td>templateId</td><td>artists</td><td>This specifies the id of the &lt;script&gt; element containing the template.  If templates are loaded externally as pre-compiled templates, then the templateId should be the same name that was assigned to the template when compiled - both internal name (e.g. with Dust) and/or actual filename (e.g. with Handlebars).  Note: only Handlebars and Dust templates are supported as pre-compiled templates.  All other templates should be defined with a &lt;script&gt; element with an id equal to whatever you want to use for templateId.</td>
   </tr>
   <tr>
-    <td>templatePrecompiled</td><td>artists</td><td>This a boolean that indicates whether the lazyloader should expect pre-compiled templates for the templateType in use (Note: only Handlebars and Dust templates are supported as pre-compiled templates)</td>
+    <td>templatePrecompiled</td><td>true</td><td>This a boolean that indicates whether the lazyloader should expect pre-compiled templates for the templateType in use (Note: only Handlebars and Dust templates are supported as pre-compiled templates)</td>
   </tr>
   <tr>
     <td>mainId</td><td>artistsList</td><td>This specifies the id of the ul element of the listview to lazyload</td>
