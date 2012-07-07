@@ -150,6 +150,11 @@
                     this._defaultSelectors.bottom = '[data-role="list-divider"]';
                 }
 
+                if (( typeof this._settings.pageId !== 'undefined') && ( this._settings.pageId !== "")) {
+                
+                    this._settings.totalHeight = $("#"+this._settings.pageId).height();
+                }
+
                 // Get the defaultSelectors and extend / merge / override them with user defined selectors 
                 this._selectors = $.extend( true, this._selectors, this._defaultSelectors );
                 this._selectors = $.extend( true, this._selectors, selectors );
@@ -314,21 +319,30 @@
 
             threshold = this.options.threshold || threshold;
 
-            var total_height, current_scroll, visible_height;
+            var totalHeight, currentScroll, visibleHeight;
 
-            if (document.documentElement.scrollTop) { 
-                current_scroll = document.documentElement.scrollTop;
+            if (document.documentElement.scrollTop) {
+
+                currentScroll = document.documentElement.scrollTop;
+            
             } else { 
-                current_scroll = document.body.scrollTop; 
+            
+                currentScroll = document.body.scrollTop; 
             }
 
-            // Uses the height of the page
-            total_height = $("#"+this._settings.pageId).height();
+            if (this._instances[this._settings.pageId]) {
+
+                totalHeight = this._instances[this._settings.pageId]['settings'].totalHeight;
+
+            } else {
+
+                totalHeight = this._settings.totalHeight;
+            }
 
             // Uses the height of browser viewport
-            visible_height = $(window).height(); 
+            visibleHeight = $(window).height(); 
 
-            return ((total_height - threshold) <= (current_scroll + visible_height));
+            return ((totalHeight - threshold) <= (currentScroll + visibleHeight));
         },
         
         // Main lazy loader function
@@ -353,7 +367,7 @@
 
                             // Make sure the request for more is still for the current page instance of the lazyloader 
                             // before wasting any time building the _parameters and query string and then making the request
-                            if ($that._moreOutstandingPageId == $that._settings.pageId) {
+                            if ( $that._moreOutstandingPageId == $that._settings.pageId ) {
 
                                 // if the page scroll location is close to the bottom
                                 if ($that._check($that.options.threshold) || (timeout === 0)) {
@@ -614,8 +628,25 @@
                                                     // Refresh the listview so it is re-enhanced by JQM
                                                     $( mainElementSelector ).listview( 'refresh' );
 
+                                                    count = parseInt(count);
+
+                                                    var singleItemHeight = $( singleItemElementSelector ).first().next().height();
+
+                                                    if ($that._instances[$that._settings.pageId]) {
+
+                                                        var totalHeight = $that._instances[$that._settings.pageId]['settings'].totalHeight;
+
+                                                        $that._instances[$that._settings.pageId]['settings'].totalHeight = ( totalHeight + ( singleItemHeight * count ) );
+
+                                                    } else {
+
+                                                        var totalHeight = $that._settings.totalHeight;
+
+                                                        $that._settings.totalHeight = ( totalHeight + ( singleItemHeight * count ) );
+                                                    }
+
                                                     // Increment the stored retrieved count only by the number of items retrieved
-                                                    $that._instances[$that._settings.pageId]['options'].retrieved += parseInt(count);
+                                                    $that._instances[$that._settings.pageId]['options'].retrieved += count;
 
                                                     if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
 
