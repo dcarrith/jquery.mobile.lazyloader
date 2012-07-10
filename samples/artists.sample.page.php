@@ -4,25 +4,26 @@ $callback = "callback";
 $retrieve = 20;
 $retrieved = 20;
 $offset = 0;
-$param_one = "";
 
 if ($_POST) {
 
-	$retrieve = $_POST['retrieve'];
-	$retrieved = $_POST['retrieved'];
-	$offset = $_POST['offset'];
-	$param_one = $_POST['param_one'];
+	$retrieve = intval($_POST['retrieve']);
+	$retrieved = intval($_POST['retrieved']);
+	$offset = intval($_POST['offset']);
 
 } else {
 
 	if ($_GET) {
 
-		$callback = $_GET['callback'];
-		$retrieve = $_GET['retrieve'];
-		$retrieved = $_GET['retrieved'];
-		$offset = $_GET['offset'];
-		$param_one = $_GET['param_one'];	
+		$retrieve = intval($_GET['retrieve']);
+		$retrieved = intval($_GET['retrieved']);
+		$offset = intval($_GET['offset']);	
 	}
+}
+
+if ( !is_int( $retrieved ) ) {
+
+	exit();
 }
 
 $artists[20] = '{ "data" : [{ "count" : "20", "json" : [{ "href" : "artist/Carlos%2BSantana%2B%2526%2BJohn%2BMcLaughlin/albums", "transition":"slide", "name":"Carlos Santana & John McLaughlin", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Carolina%2BChocolate%2BDrops/albums", "transition":"slide", "name":"Carolina Chocolate Drops", "theme_buttons":"k", "count_bubble_value":"7" },{ "href" : "artist/Charlie%2BHunter%2BTrio/albums", "transition":"slide", "name":"Charlie Hunter Trio", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Claude%2BChalle/albums", "transition":"slide", "name":"Claude Challe", "theme_buttons":"k", "count_bubble_value":"14" },{ "href" : "artist/Claude%2BChalle%2B%2526%2BFriends/albums", "transition":"slide", "name":"Claude Challe & Friends", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Culture/albums", "transition":"slide", "name":"Culture", "theme_buttons":"k", "count_bubble_value":"4" },{ "href" : "artist/Cypress%2BHill/albums", "transition":"slide", "name":"Cypress Hill", "theme_buttons":"k", "count_bubble_value":"3" },{ "href" : "artist/DJ%2BTiesto/albums", "transition":"slide", "name":"DJ Tiesto", "theme_buttons":"k", "count_bubble_value":"15" },{ "href" : "artist/Dalai%2BLama/albums", "transition":"slide", "name":"Dalai Lama", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Damian%2B%255C%2522Junior%2BGong%255C%2522%2BMarley/albums", "transition":"slide", "name":"Damian \\\"Junior Gong\\\" Marley", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Darude/albums", "transition":"slide", "name":"Darude", "theme_buttons":"k", "count_bubble_value":"3" },{ "href" : "artist/Dave%2BMatthews/albums", "transition":"slide", "name":"Dave Matthews", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Dave%2BMatthews%2B%2526%2BTim%2BReynolds/albums", "transition":"slide", "name":"Dave Matthews & Tim Reynolds", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Dave%2BMatthews%2BBand/albums", "transition":"slide", "name":"Dave Matthews Band", "theme_buttons":"k", "count_bubble_value":"11" },{ "href" : "artist/Days%2BOf%2BThe%2BNew/albums", "transition":"slide", "name":"Days Of The New", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Deftones/albums", "transition":"slide", "name":"Deftones", "theme_buttons":"k", "count_bubble_value":"9" },{ "href" : "artist/Dinosaur%2BJr./albums", "transition":"slide", "name":"Dinosaur Jr.", "theme_buttons":"k", "count_bubble_value":"4" },{ "href" : "artist/Don%2BCarlos/albums", "transition":"slide", "name":"Don Carlos", "theme_buttons":"k", "count_bubble_value":"4" },{ "href" : "artist/Dread%2BAshanti/albums", "transition":"slide", "name":"Dread Ashanti", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Eagles/albums", "transition":"slide", "name":"Eagles", "theme_buttons":"k", "count_bubble_value":"2" }] } ] }';
@@ -30,14 +31,14 @@ $artists[40] = '{ "data" : [{ "count" : "20", "json" : [{ "href" : "artist/Eddie
 $artists[60] = '{ "data" : [{ "count" : "20", "json" : [{ "href" : "artist/Gotye/albums", "transition":"slide", "name":"Gotye", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Govinda/albums", "transition":"slide", "name":"Govinda", "theme_buttons":"k", "count_bubble_value":"3" },{ "href" : "artist/Greyboy/albums", "transition":"slide", "name":"Greyboy", "theme_buttons":"k", "count_bubble_value":"4" },{ "href" : "artist/Groove%2BArmada/albums", "transition":"slide", "name":"Groove Armada", "theme_buttons":"k", "count_bubble_value":"9" },{ "href" : "artist/Groundation/albums", "transition":"slide", "name":"Groundation", "theme_buttons":"k", "count_bubble_value":"8" },{ "href" : "artist/Gruntruck/albums", "transition":"slide", "name":"Gruntruck", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Gwen%2BStefani/albums", "transition":"slide", "name":"Gwen Stefani", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/I-Roy/albums", "transition":"slide", "name":"I-Roy", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Iceburn/albums", "transition":"slide", "name":"Iceburn", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Incubus/albums", "transition":"slide", "name":"Incubus", "theme_buttons":"k", "count_bubble_value":"8" },{ "href" : "artist/Israel%2BVibration/albums", "transition":"slide", "name":"Israel Vibration", "theme_buttons":"k", "count_bubble_value":"9" },{ "href" : "artist/Jack%2BJohnson/albums", "transition":"slide", "name":"Jack Johnson", "theme_buttons":"k", "count_bubble_value":"3" },{ "href" : "artist/Jah%2BCure/albums", "transition":"slide", "name":"Jah Cure", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Jane%2527s%2BAddiction/albums", "transition":"slide", "name":"Jane\\\'s Addiction", "theme_buttons":"k", "count_bubble_value":"5" },{ "href" : "artist/Jimi%2BHendrix/albums", "transition":"slide", "name":"Jimi Hendrix", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/John%2BColtrane/albums", "transition":"slide", "name":"John Coltrane", "theme_buttons":"k", "count_bubble_value":"6" },{ "href" : "artist/John%2BMayer/albums", "transition":"slide", "name":"John Mayer", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/John%2BMcLaughin%252C%2BZakir%2BHussain%252C%2BU.%2BSrinivas%252C%2BV.%2BSelvaganesh/albums", "transition":"slide", "name":"John McLaughin, Zakir Hussain, U. Srinivas, V. Selvaganesh", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/John%2BMcLaughlin/albums", "transition":"slide", "name":"John McLaughlin", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/John%2BWest/albums", "transition":"slide", "name":"John West", "theme_buttons":"k", "count_bubble_value":"1" }] } ] }';
 $artists[80] = '{ "data" : [{ "count" : "20", "json" : [{ "href" : "artist/Kanye%2BWest/albums", "transition":"slide", "name":"Kanye West", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Karl%2BDenson/albums", "transition":"slide", "name":"Karl Denson", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Kasabian/albums", "transition":"slide", "name":"Kasabian", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Kruder%2B%2526%2BDorfmeister/albums", "transition":"slide", "name":"Kruder & Dorfmeister", "theme_buttons":"k", "count_bubble_value":"4" },{ "href" : "artist/Lake%2BTrout/albums", "transition":"slide", "name":"Lake Trout", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Laura%2BMarling%253BThe%2BDharohar%2BProject%253BMumford%2B%2526%2BSons/albums", "transition":"slide", "name":"Laura Marling;The Dharohar Project;Mumford & Sons", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Little%2BBrother/albums", "transition":"slide", "name":"Little Brother", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Long%2BBeach%2BDub%2BAllstars/albums", "transition":"slide", "name":"Long Beach Dub Allstars", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Matisyahu/albums", "transition":"slide", "name":"Matisyahu", "theme_buttons":"k", "count_bubble_value":"3" },{ "href" : "artist/Medeski%252C%2BMartin%2B%2526%2BWood/albums", "transition":"slide", "name":"Medeski, Martin & Wood", "theme_buttons":"k", "count_bubble_value":"5" },{ "href" : "artist/Midnite/albums", "transition":"slide", "name":"Midnite", "theme_buttons":"k", "count_bubble_value":"24" },{ "href" : "artist/Midnite%2B%2526%2BI%2BGrade/albums", "transition":"slide", "name":"Midnite & I Grade", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Midnite%2BBranch%2BI/albums", "transition":"slide", "name":"Midnite Branch I", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Midnite%2BI%2BGrade/albums", "transition":"slide", "name":"Midnite I Grade", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Mikey%2BDread/albums", "transition":"slide", "name":"Mikey Dread", "theme_buttons":"k", "count_bubble_value":"2" },{ "href" : "artist/Miles%2BDavis/albums", "transition":"slide", "name":"Miles Davis", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Misty%2Bin%2BRoots/albums", "transition":"slide", "name":"Misty in Roots", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Mos%2BDef/albums", "transition":"slide", "name":"Mos Def", "theme_buttons":"k", "count_bubble_value":"4" },{ "href" : "artist/Mos%2BDef%2B%2526%2BTalib%2BKwali/albums", "transition":"slide", "name":"Mos Def & Talib Kwali", "theme_buttons":"k", "count_bubble_value":"1" },{ "href" : "artist/Mother%2BLove%2BBone/albums", "transition":"slide", "name":"Mother Love Bone", "theme_buttons":"k", "count_bubble_value":"1" }] } ] }';
 
-if ( ($retrieved > 80) || ( $retrieved === 20 ) ) {
+if ( ($retrieved === 20) || ( $retrieved === 40 ) || ( $retrieved === 60) || ( $retrieved === 80) ) {
 
-	echo $callback."( '{ \"data\" : [{ \"count\" : \"0\", \"json\" : [] } ] }' );";
+	echo $callback."( '".$artists[ $retrieved ]."' );";
 	exit();
 
 } else {
 
-	echo $callback."( '".$artists[ $retrieved ]."' );";
+	echo $callback."( '{ \"data\" : [{ \"count\" : \"0\", \"json\" : [] } ] }' );";
 	exit();
 }
 
