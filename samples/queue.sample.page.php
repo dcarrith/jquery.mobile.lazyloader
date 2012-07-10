@@ -1,5 +1,7 @@
 <?php
 
+// clean jsfiddle fork:  http://jsfiddle.net/qY3fF/
+
 $callback = "callback";
 $retrieve = 10;
 $retrieved = 10;
@@ -15,6 +17,7 @@ if ($_POST) {
 
 	if ($_GET) {
 
+		$callback = strval($_GET['callback']);
 		$retrieve = intval($_GET['retrieve']);
 		$retrieved = intval($_GET['retrieved']);
 		$offset = intval($_GET['offset']);	
