@@ -1,4 +1,4 @@
-(function( $, undefined ) {
+( function( $, undefined ) {
 
     $.widget( "mobile.lazyloader", $.mobile.widget, {
 
@@ -48,7 +48,11 @@
             // The url of the server side resource to which the lazy loader AJAX call should be directed
             "moreUrl"               : "",
             // The url of the server side resource responsible for clearing server-side session variables to maintain state
-            "clearUrl"              : "" 
+            "clearUrl"              : "",
+            // This will allow for cross-domain loading with JSONP - if false, lazyloader will use $.ajax POST
+            "JSONP"                 : false,
+            // This is the callback that the server resourse needs for wrapping the returned JSON
+            "JSONPCallback"         : ""
         },
 
         // Create the default selectors that can be overridden during reinitialization
@@ -113,9 +117,9 @@
         _widgetState : {
 
             // whether or not we are already retrieving items from server
-            'busy'          : false,
+            'busy'  : false,
             // this is to specify whether lazy loading is probably done, so we don't need to try anymore
-            'done'          : false
+            'done'  : false
         },
 
         // Runs automatically the first time this widget is called. Put the initial widget set-up code here. 
@@ -134,7 +138,7 @@
 
         _initialize : function( options, settings, parameters, selectors ) {
 
-            if ((typeof options != 'undefined') && (options != '')) {
+            if ( ( typeof options != 'undefined' ) && ( options != '' ) ) {
 
                 this._widgetState.busy = false;
                 this._widgetState.done = false;
@@ -143,16 +147,16 @@
                 this._settings = $.extend( true, this._settings, this._defaultSettings );
                 this._settings = $.extend( true, this._settings, settings );
 
-                if (( typeof this._settings.mainId !== 'undefined') && ( this._settings.mainId !== "")) {
+                if ( ( typeof this._settings.mainId !== 'undefined' ) && ( this._settings.mainId !== "") ) {
 
                     this._defaultSelectors.main = '#'+this._settings.mainId;
                     this._defaultSelectors.single = '#'+this._settings.mainId+' li';
                     this._defaultSelectors.bottom = '[data-role="list-divider"]';
                 }
 
-                if (( typeof this._settings.pageId !== 'undefined') && ( this._settings.pageId !== "")) {
+                if ( ( typeof this._settings.pageId !== 'undefined' ) && ( this._settings.pageId !== "") ) {
                 
-                    this._settings.totalHeight = $("#"+this._settings.pageId).height();
+                    this._settings.totalHeight = $( "#"+this._settings.pageId ).height();
                 }
 
                 // Get the defaultSelectors and extend / merge / override them with user defined selectors 
@@ -174,13 +178,13 @@
                 if ( ( typeof newPageId != 'undefined ') && ( newPageId != '' ) ) {
 
                     // First check to see if we are already tracking an instance for the page being re-initialized before storing the defaults
-                    if (!this._instances[newPageId]) {
+                    if ( !this._instances[newPageId] ) {
 
                         // create a copy to be stored along with the instance
                         optionsAsString = JSON.stringify(this.options);
 
                         // retrieve the template from the DOM so we can store it along with the instance 
-                        if (( typeof this._settings.templateId != 'undefined' ) && ( this._settings.templateId != '') ) {
+                        if ( ( typeof this._settings.templateId != 'undefined' ) && ( this._settings.templateId != '') ) {
 
                             // retrieve the template from the DOM
                             var template = $( "#"+this._settings.templateId ).html();
@@ -208,22 +212,22 @@
                         }
 
                         // create a copy to be stored along with the instance
-                        settingsAsString = JSON.stringify(this._settings);
+                        settingsAsString = JSON.stringify( this._settings );
 
                         // create a copy to be stored along with the instance
-                        selectorsAsString = JSON.stringify(this._selectors);
+                        selectorsAsString = JSON.stringify( this._selectors );
 
                         // initialize a new object for this newPageId
                         this._instances[newPageId] = [];
 
                         // Store the merged options object as a new instance for later modifications and retrieval
-                        this._instances[newPageId]['options'] = $.parseJSON(optionsAsString);
+                        this._instances[newPageId]['options'] = $.parseJSON( optionsAsString );
 
                         // Store the merged settings object as a new instance for later retrieval
-                        this._instances[newPageId]['settings'] = $.parseJSON(settingsAsString);
+                        this._instances[newPageId]['settings'] = $.parseJSON( settingsAsString );
 
                         // Store the merged selectors object as a new instance for later retrieval
-                        this._instances[newPageId]['selectors'] = $.parseJSON(selectorsAsString);
+                        this._instances[newPageId]['selectors'] = $.parseJSON( selectorsAsString );
                     }
                 }
             }
@@ -231,26 +235,26 @@
 
         _bind : function () {
 
-            $('body').bind("scrollstart", $.proxy( this._handleScrollStart, this ));
-            $('body').bind("scrollstop", $.proxy( this._handleScrollStop, this ));
+            $( 'body' ).bind( "scrollstart", $.proxy( this._handleScrollStart, this ) );
+            $( 'body' ).bind( "scrollstop", $.proxy( this._handleScrollStop, this ) );
 
-            if (/Firefox/i.test(navigator.userAgent)) {
+            if ( /Firefox/i.test( navigator.userAgent ) ) {
 
-                $(window).bind( "DOMMouseScroll", $.proxy( this._handleMouseWheelEvent, this ) );
+                $( window ).bind( "DOMMouseScroll", $.proxy( this._handleMouseWheelEvent, this ) );
 
             } else {
             
-                if ((typeof this._selectors != 'undefined') && (this._selectors != null) && (this._selectors != '')) {
+                if ( ( typeof this._selectors != 'undefined' ) && ( this._selectors != null) && ( this._selectors != '' ) ) {
 
-                    if (typeof this._selectors.main != 'undefined') {
+                    if ( typeof this._selectors.main != 'undefined' ) {
 
-                        if ($(this._selectors.main).attachEvent) {
+                        if ( $( this._selectors.main ).attachEvent ) {
 
-                            $(window).bind( "onmousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
+                            $( window ).bind( "onmousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
 
                         } else {
 
-                            $(window).bind( "mousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
+                            $( window ).bind( "mousewheel", $.proxy( this._handleMouseWheelEvent, this ) );
                         }
                     }
                 }
@@ -262,26 +266,26 @@
 
         _unbind : function () {
 
-            $('body').unbind("scrollstart", this._handleScrollStart );
-            $('body').unbind("scrollstop", this._handleScrollStop );
+            $( 'body' ).unbind( "scrollstart", this._handleScrollStart );
+            $( 'body' ).unbind( "scrollstop", this._handleScrollStop );
 
-            if (/Firefox/i.test(navigator.userAgent)) {
+            if ( /Firefox/i.test( navigator.userAgent ) ) {
 
-                $(window).unbind( "DOMMouseScroll", this._handleMouseWheelEvent );
+                $( window ).unbind( "DOMMouseScroll", this._handleMouseWheelEvent );
 
             } else {
 
-                if ((typeof this._selectors != 'undefined') && (this._selectors != null) && (this._selectors != '')) {
+                if ( ( typeof this._selectors != 'undefined' ) && ( this._selectors != null ) && ( this._selectors != '' ) ) {
 
-                    if (typeof this._selectors.main != 'undefined') {
+                    if ( typeof this._selectors.main != 'undefined' ) {
                     
-                        if ($(this._selectors.main).attachEvent) {
+                        if ( $( this._selectors.main ).attachEvent ) {
 
-                            $(window).unbind( "onmousewheel", this._handleMouseWheelEvent );
+                            $( window ).unbind( "onmousewheel", this._handleMouseWheelEvent );
 
                         } else {
 
-                            $(window).unbind( "mousewheel", this._handleMouseWheelEvent );
+                            $( window ).unbind( "mousewheel", this._handleMouseWheelEvent );
                         }
                     }
                 }
@@ -321,7 +325,7 @@
 
             var totalHeight, currentScroll, visibleHeight;
 
-            if (document.documentElement.scrollTop) {
+            if ( document.documentElement.scrollTop ) {
 
                 currentScroll = document.documentElement.scrollTop;
             
@@ -330,7 +334,7 @@
                 currentScroll = document.body.scrollTop; 
             }
 
-            if (this._instances[this._settings.pageId]) {
+            if ( this._instances[this._settings.pageId] ) {
 
                 totalHeight = this._instances[this._settings.pageId]['settings'].totalHeight;
 
@@ -340,21 +344,21 @@
             }
 
             // Uses the height of browser viewport
-            visibleHeight = $(window).height(); 
+            visibleHeight = $( window ).height(); 
 
-            return ((totalHeight - threshold) <= (currentScroll + visibleHeight));
+            return ( ( totalHeight - threshold ) <= ( currentScroll + visibleHeight ) );
         },
         
         // Main lazy loader function
         _load : function( timeout ) { 
 
-            if ((typeof this._settings.pageId != undefined) && (this._settings.pageId != '')) {
+            if ( ( typeof this._settings.pageId != undefined ) && ( this._settings.pageId != '' ) ) {
             
                 // we only want to proceed with this function logic if the lazyloader is currently initialized for the active page
-                if ($('.ui-page-active').attr('id') == this._settings.pageId) {
+                if ( $( '.ui-page-active' ).attr( 'id' ) == this._settings.pageId ) {
 
                     // make sure the plugin is not already lazy loading some items
-                    if ((!this._widgetState.busy) && (!this._widgetState.done)) {
+                    if ( ( !this._widgetState.busy ) && ( !this._widgetState.done ) ) {
 
                         // Set the variable that can be used to make sure the outstanding request for more is for the same instance of the lazyloader
                         this._moreOutstandingPageId = this._settings.pageId;
@@ -363,21 +367,28 @@
                         $that = this;
 
                         // Don't try to load anything until the scroll is given some time to get closer to the bottom
-                        setTimeout(function() {
+                        setTimeout( function() {
 
                             // Make sure the request for more is still for the current page instance of the lazyloader 
                             // before wasting any time building the _parameters and query string and then making the request
                             if ( $that._moreOutstandingPageId == $that._settings.pageId ) {
 
                                 // if the page scroll location is close to the bottom
-                                if ($that._check($that.options.threshold) || (timeout === 0)) {
+                                if ( $that._check( $that.options.threshold ) || ( timeout === 0 ) ) {
 
-                                    $("#"+$that._settings.progressDivId).show($that.timeoutOptions.showprogress, function() {
+                                    $( "#"+$that._settings.progressDivId ).show( $that.timeoutOptions.showprogress, function() {
 
                                         // Default the moreUrl to be the current instance
                                         moreUrl = $that._settings.moreUrl;
 
-                                        var queryString = "";
+                                        var requestType = "POST";
+                                        var dataType = "json";
+                                        var postData = "";
+
+                                        // JSONP parameters
+                                        var JSONP = false;
+                                        var JSONPCallback = "";
+
                                         var count = 0;
 
                                         if ($that._instances[$that._settings.pageId]) {
@@ -386,6 +397,12 @@
                                             $that._parameters.retrieved = $that._instances[$that._settings.pageId]['options'].retrieved;
                                             $that._parameters.offset = $that._instances[$that._settings.pageId]['options'].offset;
 
+                                            if ( ( $that._instances[$that._settings.pageId]['settings'].JSONP ) ) {
+
+                                                JSONP = true;
+                                                JSONPCallback = $that._instances[$that._settings.pageId]['settings'].JSONPCallback;
+                                            }
+
                                         } else {
 
                                             $that._parameters.retrieve = $that.options.retrieve;
@@ -393,45 +410,71 @@
                                             $that._parameters.offset = $that.options.offset;
                                         }
 
-                                        if ((typeof $that._settings.pageId != 'undefined') && ($that._settings.pageId != '')) {
+                                        if ( ( typeof $that._settings.pageId != 'undefined' ) && ( $that._settings.pageId != '' ) ) {
 
-                                            var hidden_inputs = $("#"+$that._settings.pageId).find('[type="hidden"]');
+                                            var hidden_inputs = $( "#"+$that._settings.pageId ).find( '[type="hidden"]' );
 
-                                            for(i=0; i<hidden_inputs.length; i++) {
+                                            for( i=0; i<hidden_inputs.length; i++ ) {
                                                 
                                                 var hidden_input = $(hidden_inputs).get(i);
                                                 
-                                                if ((typeof $(hidden_input).attr('id') != 'undefined') && ($(hidden_input).attr('id') != '')) {
+                                                if ( (typeof $( hidden_input ).attr( 'id' ) != 'undefined' ) && ( $( hidden_input ).attr( 'id' ) != '' ) ) {
 
-                                                    $that._parameters[$(hidden_input).attr('id')] = escape($(hidden_input).val());
+                                                    $that._parameters[$( hidden_input ).attr( 'id' )] = escape( $( hidden_input ).val() );
                                                 }
                                             }
                                         }
 
-                                        //alert(JSON.stringify($that._parameters));
+                                        if ( !JSONP ) {
 
-                                        for (var key in $that._parameters) {
+                                            for ( var key in $that._parameters ) {
 
-                                            if (count == 0) {
-                                                queryString += (key + "=" + $that._parameters[key]);
+                                                if ( count == 0 ) {
 
-                                            } else {
-                                                queryString += ("&" + key + "=" + $that._parameters[key]);
+                                                    postData += ( key + "=" + $that._parameters[key] );
+
+                                                } else {
+
+                                                    postData += ( "&" + key + "=" + $that._parameters[key] );
+                                                }
+
+                                                count = count+1;
                                             }
 
-                                            count = count+1;
+                                        } else {
+
+                                            requestType = "GET";
+                                            dataType = "jsonp";
+
+                                            var JSONPParameters = "";
+
+                                            for ( var key in $that._parameters ) {
+
+                                                if (count == 0) {
+
+                                                    JSONPParameters += '"' + key + '"' + ': "'+$that._parameters[key]+'"';
+
+                                                } else {
+
+                                                    JSONPParameters += ', ' + '"' + key + '"' + ': "'+$that._parameters[key]+'"';
+                                                }
+
+                                                count = count+1;
+                                            }
+
+                                            // Create a JSON object out of the JSONParameters string
+                                            postData = $.parseJSON( "{ "+JSONPParameters+" }" );
                                         }
-                                        
-                                        //alert("moreUrl: "+moreUrl+"\nqueryString: "+queryString);
 
-                                        $.ajax({
-                                            type: "POST",
+                                        $.ajax( {
+
+                                            type: requestType,
                                             url: moreUrl,
-                                            async: true,
-                                            data: queryString,
-                                            success: function(msg){
+                                            dataType: dataType,
+                                            jsonpCallback: JSONPCallback,
+                                            data: postData,
+                                            success: function( more ){
 
-                                                var more                        = $.parseJSON(msg);
                                                 var count                       = more.data[0].count;
                                                 var html                        = "";
                                                 var json                        = "";
@@ -444,7 +487,7 @@
                                                 var bottomElementSelector       = "";
                                                 var $bottomElement              = "";
 
-                                                if (count > 0) {
+                                                if ( count > 0 ) {
 
                                                     mainElementSelector = $that._selectors.main;
                                                     singleItemElementSelector = $that._selectors.single;
@@ -452,11 +495,11 @@
 
                                                     $bottomElement = $that._getBottomElement( mainElementSelector, bottomElementSelector );
 
-                                                    if ((typeof more.data[0].html != 'undefined') && (more.data[0].html != '')) {
+                                                    if ( ( typeof more.data[0].html != 'undefined' ) && ( more.data[0].html != '' ) ) {
                                                     
                                                         html = more.data[0].html;
 
-                                                        if ($bottomElement) {
+                                                        if ( $bottomElement ) {
 
                                                             $( singleItemElementSelector ).last().before( html );
 
@@ -468,19 +511,19 @@
                                                     } else {
 
                                                         // Check to see if there is already an instance of this page in memory
-                                                        if ($that._instances[$that._settings.pageId]) {
+                                                        if ( $that._instances[$that._settings.pageId] ) {
 
                                                             // If a templateId isn't set, then there's no need to do the other two checks
-                                                            if ((typeof $that._instances[$that._settings.pageId]['settings'].templateId != 'undefined') && ($that._instances[$that._settings.pageId]['settings'].templateId != '')) {
+                                                            if ( ( typeof $that._instances[$that._settings.pageId]['settings'].templateId != 'undefined' ) && ( $that._instances[$that._settings.pageId]['settings'].templateId != '' ) ) {
 
                                                                 templateId = $that._instances[$that._settings.pageId]['settings'].templateId;
                                                             
-                                                                if ((typeof $that._instances[$that._settings.pageId]['settings'].templateType != 'undefined') && ($that._instances[$that._settings.pageId]['settings'].templateType != '')) {
+                                                                if ( ( typeof $that._instances[$that._settings.pageId]['settings'].templateType != 'undefined' ) && ( $that._instances[$that._settings.pageId]['settings'].templateType != '' ) ) {
 
                                                                     templateType = $that._instances[$that._settings.pageId]['settings'].templateType;
                                                                 }
 
-                                                                if ((typeof $that._instances[$that._settings.pageId]['settings'].template != 'undefined') && ($that._instances[$that._settings.pageId]['settings'].template != '')) {
+                                                                if ( ( typeof $that._instances[$that._settings.pageId]['settings'].template != 'undefined' ) && ( $that._instances[$that._settings.pageId]['settings'].template != '' ) ) {
 
                                                                     template = $that._instances[$that._settings.pageId]['settings'].template;
                                                                 }
@@ -490,16 +533,16 @@
                                                         
                                                         } else { // This should never happen ... but, just in case
 
-                                                            if (( typeof $that._settings.templateId != 'undefined' ) && ( $that._settings.templateId != '') ) {
+                                                            if ( ( typeof $that._settings.templateId != 'undefined' ) && ( $that._settings.templateId != '') ) {
 
                                                                 templateId = $that._settings.templateId;
 
-                                                                if (( typeof $that._settings.templateType != 'undefined' ) && ( $that._settings.templateType != '') ) {
+                                                                if ( ( typeof $that._settings.templateType != 'undefined' ) && ( $that._settings.templateType != '') ) {
 
                                                                     templateType = $that._settings.templateType;
                                                                 }
 
-                                                                if (( typeof $that._settings.template != 'undefined' ) && ( $that._settings.template != '') ) {
+                                                                if ( ( typeof $that._settings.template != 'undefined' ) && ( $that._settings.template != '') ) {
 
                                                                     template = $that._settings.template;
                                                                 }
@@ -517,7 +560,7 @@
                                                                 json = more.data[0].json;
 
                                                                 // first make sure there was a bottom element to work around
-                                                                if ($bottomElement) {
+                                                                if ( $bottomElement ) {
 
                                                                     // we need to remove the last li if it's a divider so we can append the retrieved li items
                                                                     $bottomElement.remove();
@@ -527,7 +570,7 @@
                                                                 $( mainElementSelector ).json2html( json, $.parseJSON( template ) );
 
                                                                 // first make sure there was a list-divider
-                                                                if ($bottomElement) {
+                                                                if ( $bottomElement ) {
 
                                                                     // put the last li item back if it exists (it will exist if it was an list-divider)
                                                                     $( singleItemElementSelector ).last().append( $bottomElement );
@@ -543,7 +586,7 @@
 
                                                                         if ( templatePrecompiled ) {
 
-                                                                            template = Handlebars.templates[ templateId + '.tmpl']; // your template minus the .js
+                                                                            template = Handlebars.templates[templateId + '.tmpl']; // your template minus the .js
                 
                                                                             html = template( json );
 
@@ -628,11 +671,11 @@
                                                     // Refresh the listview so it is re-enhanced by JQM
                                                     $( mainElementSelector ).listview( 'refresh' );
 
-                                                    count = parseInt(count);
+                                                    count = parseInt( count );
 
                                                     var singleItemHeight = $( singleItemElementSelector ).first().next().height();
 
-                                                    if ($that._instances[$that._settings.pageId]) {
+                                                    if ( $that._instances[$that._settings.pageId] ) {
 
                                                         var totalHeight = $that._instances[$that._settings.pageId]['settings'].totalHeight;
 
@@ -648,7 +691,7 @@
                                                     // Increment the stored retrieved count only by the number of items retrieved
                                                     $that._instances[$that._settings.pageId]['options'].retrieved += count;
 
-                                                    if ((count < $that.options.retrieve) || ($that.options.retrieve == "all")) {
+                                                    if ( ( count < $that.options.retrieve ) || ( $that.options.retrieve == "all" ) ) {
 
                                                         $that._widgetState.done = true;
 
@@ -664,24 +707,27 @@
                                                     $that._triggerEvent( "alldone", "_load" );
                                                 }
 
-                                                $("#"+$that._settings.progressDivId).hide(250, function() {
+                                                $( "#"+$that._settings.progressDivId ).hide( 250, function() {
 
                                                     $that._widgetState.busy = false;
-                                                }); 
+                                                } ); 
 
                                                 // trigger an event to announce that the lazyloader is done loading that chunk
                                                 $that._triggerEvent( "doneloading", "_load" );
 
                                             },
-                                            error: function(msg){
+                                            error: function( msg ) {
 
                                                 // trigger an event to announce that an error occurred during the _load
                                                 $that._triggerEvent( "error", "_load", msg );
 
-                                                $("#"+$that._settings.progressDivId).hide(250, function() {
+                                                $( "#"+$that._settings.progressDivId ).hide( 250, function() {
 
                                                     $that._widgetState.busy = false;
-                                                });    
+                                                } );    
+                                            },
+                                            complete: function( msg ) { 
+                                                // this might be useful for something someday 
                                             }
                                         });
                                     });
@@ -692,12 +738,12 @@
                     
                     } else {
                         
-                        if (this._widgetState.done) {
+                        if ( this._widgetState.done ) {
 
                             // trigger an event to announce that the lazyloader is done loading this page
                             $that._triggerEvent( "alldone", "_load" );
 
-                        } else if (this._widgetState.busy) {
+                        } else if ( this._widgetState.busy ) {
 
                             // trigger an event to announce that the lazyloader is currently busy loading
                             $that._triggerEvent( "busy", "_load" );
@@ -710,13 +756,13 @@
 
                 } else {
 
-                    $("#"+this._settings.progressDivId).hide(250, function() {
+                    $( "#"+this._settings.progressDivId ).hide( 250, function() {
 
-                        if (typeof this._widgetState != 'undefined') {
+                        if ( typeof this._widgetState != 'undefined' ) {
                             
                             this._widgetState.busy = false;
                         }
-                    });
+                    } );
                 }
             }
         },
@@ -726,7 +772,7 @@
             // we will be removing the last li if it's a divider, so we need to store it for later
             var $bottomElement = $( mainElementSelector ).last().find( bottomElementSelector );
             
-            switch ($bottomElement.length) {
+            switch ( $bottomElement.length ) {
 
                 case 2 :
                     $bottomElement = $bottomElement.last();
@@ -739,10 +785,10 @@
             }
 
             // determine if there is a bottom element we need to worry about when appending the retrieved items
-            if (    (typeof $bottomElement  != 'undefined') && 
-                    (       $bottomElement  != null)        && 
-                    (       $bottomElement  != '')          && 
-                    (       $bottomElement  != 'null')  ) {
+            if ( ( typeof $bottomElement  != 'undefined' ) && 
+                 (        $bottomElement  != null )        && 
+                 (        $bottomElement  != '' )          && 
+                 (        $bottomElement  != 'null' ) ) {
 
                 return $bottomElement;
 
@@ -755,74 +801,74 @@
         // Event Handlers
         _handleMouseWheelEvent : function() {
 
-            if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
+            if ( ( !this._mouseWheelEventJustFired ) && ( !this._handleScrollStopJustFired ) && ( !this._handleScrollStartJustFired ) ) {
 
                 this._mouseWheelEventJustFired = true;
 
-                this._load(this.timeoutOptions.mousewheel);
+                this._load( this.timeoutOptions.mousewheel );
 
                 var $that = this;
 
-                this._mouseWheelTimeoutId = setTimeout(function() {
+                this._mouseWheelTimeoutId = setTimeout( function() {
 
                     $that._mouseWheelEventJustFired = false;
 
-                }, 1000);
+                }, 1000 );
             }
         },
 
         _handleScrollStart : function() {
 
-            if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
+            if ( ( !this._mouseWheelEventJustFired ) && ( !this._handleScrollStopJustFired ) && ( !this._handleScrollStartJustFired ) ) {
 
                 this._handleScrollStartJustFired = true;
 
-                this._load(this.timeoutOptions.scrollstart);
+                this._load( this.timeoutOptions.scrollstart );
 
                 var $that = this;
 
-                this._handleScrollStartTimeoutId = setTimeout(function() {
+                this._handleScrollStartTimeoutId = setTimeout( function() {
 
                     $that._handleScrollStartJustFired = false;
 
-                }, 1200);
+                }, 1200 );
             }
         },
         
         _handleScrollStop : function() {
 
-            if ((!this._mouseWheelEventJustFired) && (!this._handleScrollStopJustFired) && (!this._handleScrollStartJustFired)) {
+            if ( ( !this._mouseWheelEventJustFired ) && ( !this._handleScrollStopJustFired ) && ( !this._handleScrollStartJustFired ) ) {
 
                 this._handleScrollStopJustFired = true;
 
-                this._load(this.timeoutOptions.scrollstop);
+                this._load( this.timeoutOptions.scrollstop );
 
                 var $that = this;
 
-                this._handleScrollStopTimeoutId = setTimeout(function() {
+                this._handleScrollStopTimeoutId = setTimeout( function() {
 
                     $that._handleScrollStopJustFired = false;
 
-                }, 1200);
+                }, 1200 );
             }
         },
 
         loadMore : function ( timeout ) {
 
-        	if (timeout === 0) {
+        	if ( timeout === 0 ) {
         	
-        		this._load(this.timeoutOptions.immediately);
+        		this._load( this.timeoutOptions.immediately );
         	
         	} else {
 
-        		this._load(this.timeoutOptions.scrolldown);
+        		this._load( this.timeoutOptions.scrolldown );
         	}
         },
 
         _setOption: function( key, value ) {
 
             // we need to make sure the options record being tracked for this instance gets updated too
-            if (this._instances[this._settings.pageId]) {
+            if ( this._instances[this._settings.pageId] ) {
 
                 if ( this._instances[this._settings.pageId]['options'][key] ) {
 
@@ -831,31 +877,31 @@
             }
 
             // For UI 1.8, _setOption must be manually invoked from the base widget
-            $.Widget.prototype._setOption.apply(this, arguments);
+            $.Widget.prototype._setOption.apply( this, arguments );
             // For UI 1.9 the _super method can be used instead
             // this._super( "_setOption", key, value );
         },
 
         refresh : function ( what ) {
 
-        	if (what == 'parameters') {
+        	if ( what == 'parameters' ) {
 				
-				if (typeof this.options != 'undefined') {
+				if ( typeof this.options != 'undefined' ) {
 
-	            	for (var key in this._parameters) {
+	            	for ( var key in this._parameters ) {
 
-		            	if (typeof this.options[key] != 'undefined') {
+		            	if ( typeof this.options[key] != 'undefined' ) {
 
 		            		this._parameters[key] = this.options[key];
 		            	}
 	            	}
 	            }
         	
-        	} else if (what == 'parameter') {
+        	} else if ( what == 'parameter' ) {
 
         		var key = arguments[1];
 
-            	if (typeof this.options[key] != 'undefined') {
+            	if ( typeof this.options[key] != 'undefined' ) {
 
             		this._parameters[key] = this.options[key];
             	}
@@ -866,9 +912,9 @@
         	}
 
             // Get any user defined settings and extend / merge / override them with defaultSettings
-            var newParameters = JSON.stringify(this._parameters);
+            var newParameters = JSON.stringify( this._parameters );
 
-            this._parameters = $.parseJSON(newParameters);
+            this._parameters = $.parseJSON( newParameters );
         },
 
         // Public functions
@@ -887,7 +933,7 @@
             var $that = this;
 
             // clear lazy loading session variables specific to albums (section=albums)
-            $.ajax({
+            $.ajax( {
 
                 type: "POST",
                 url: $that._settings.clearUrl,
@@ -922,7 +968,7 @@
                     $( "#"+$that._settings.progressDivId ).hide( 250, function() {
 
                         $that._widgetState.busy = false;
-                    });    
+                    } );    
                 }
             });
         },
@@ -933,7 +979,7 @@
             var $that = this;
 
             // clear lazy loading session variables for all pages currently being tracked as lazyloader instances
-            $.ajax({
+            $.ajax( {
 
                 type: "POST",
                 url: $that._settings.clearUrl,
@@ -984,9 +1030,7 @@
                                             "parameters": this._parameters } );
                     break;
 
-                default :
-
-                    // alldone, busy, doneloading, reset - all send out the same data 
+                default : // alldone, busy, doneloading, reset - all send out the same data 
 
                     this._trigger( type, {  "type"      : "lazyloader"+type,
                                             "function"  : caller,
@@ -1004,4 +1048,4 @@
         $.mobile.lazyloader.prototype.enhanceWithin( e.target );
     });
 
-})( jQuery );
+} )( jQuery );
