@@ -220,6 +220,12 @@ function scrollDown(section) {
   <tr>
     <td>clearUrl</td><td>/home/clear_session</td><td>This specifies the URL of the server-side resource to which the AJAX post to clear the server-side session variables should be sent</td>
   </tr>
+  <tr>
+    <td>JSONP</td><td>true</td><td>This is a boolean to indicate whether or not JSONP should be used for crossdomain lazyloading</td>
+  </tr>
+  <tr>
+    <td>JSONPCallback</td><td>callback</td><td>This specifies the name of the callback to use</td>
+  </tr>
 </table>
 
 ### Explanation of available parameters:
