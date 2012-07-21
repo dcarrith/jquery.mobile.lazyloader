@@ -10,7 +10,7 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 
 * jQuery 1.7.x (although, jQuery 1.6.4 may work fine - it just hasn't been tested - and, the examples are tailored to jQuery 1.7.x)
 * jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)
-* jquery.json2html-3.0.js - if using json2html JSON transform templates (Use the jquery.json2html-3.0.hackedup.js if you want to use inline functions)
+* jquery.json2html-3.0.js - if using json2html JSON transform templates (Use the jquery.json2html-3.0.fixed.js if you want to use inline functions - it wasn't working for me until I wrapped data.action with an eval on line 194)
 * ICanHaz.js - if using ICanHaz templates
 * handlebars-1.0.0.beta.6.js - if using standard Handlebars templates
 * handlebars.runtime.js - if using pre-compiled Handlebars templates
@@ -76,8 +76,11 @@ $('body').on('pageinit', '#artists', function(evt, ui) {
      */
     $( "#index" ).lazyloader( "reset", "albums" );
 
+    // Use an automatic threshold that's a function of the height of the viewport
+    threshold = $( window ).height();
+
     // Set up the variable options to pass to the lazyloader reinitialize function
-    var options = {   "threshold"   : 360,
+    var options = {   "threshold"   : threshold,
                       "retrieve"    : 20,
                       "retrieved"   : 20,
                       "bubbles"     : true,
@@ -109,7 +112,11 @@ Here's an example of how the lazyloader is reinitialized on the albums page.  No
 ```JavaScript
 $('body').on('pageinit', '#albums', function(evt, ui) {
 
-    var options = { "threshold"   : 480,
+    // Use an automatic threshold that's a function of the height of the viewport
+    threshold = $( window ).height();
+
+    // Set up the variable options to pass to the lazyloader reinitialize function
+    var options = { "threshold"   : threshold,
                     "retrieve"    : 10,
                     "retrieved"   : 10,
                     "bubbles"     : true };
@@ -175,7 +182,7 @@ function scrollDown(section) {
     <th>Option</th><th>Value</th><th>Purpose</th>
   </tr>
   <tr>
-    <td>threshold</td><td>360</td><td>This specifies the threshold in pixels for how close to the bottom of the page should the widget get before making the call to the private function _load</td>
+    <td>threshold</td><td>$( window ).height()</td><td>This specifies the threshold in pixels for how close to the bottom of the page should the widget get before making the call to the private function _load.  It now defaults to $( window ).height() but can be overridden with a static value or any function of $( window ).height() (e.g. 2 * $( window ).height() if you want)</td>
   </tr>
   <tr>
     <td>retrieve</td><td>20</td><td>This specifies how many items should be retrieved with each lazy loading ajax call</td>
