@@ -176,9 +176,8 @@
 									//Add the property as a attribute if it's not a key one
 									var isEvent = false;
 									
-									// This doesn't seem to work all that well - so, I'll leave functions inline
 									//Check if the first two characters are 'on' then this is an event
-									/*if( key.charAt(0) === 'o' )
+									if( key.charAt(0) === 'o' )
 										if( key.charAt(1) === 'n')
 											{	
 												var data = {
@@ -192,11 +191,12 @@
 												$(element).bind(key.substring(key.indexOf('on')+2),data, function(event) 
 												{
 													data.event = event;
-													data.action(data);
+													// this data.action needs to be wrapped with eval for the function to work
+													eval(data.action)(data);
 												});
 
 												isEvent = true;
-											}*/
+											}
 									
 									//If this wasn't an even the add it as an attribute
 									if( !isEvent ) $(element).attr(key, $.json2html.getValue(obj, transform, key,index));

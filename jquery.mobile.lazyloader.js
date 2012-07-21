@@ -5,8 +5,8 @@
         // Create some default options that can be extended in reinitialization
         _defaultOptions : {
 
-            // threshold for how close to the bottom should we trigger a load of more items
-            'threshold'     : 360,
+            // threshold for how close to the bottom should we trigger a load of more items - default to height of viewport
+            'threshold'     : $( window ).height(),
             // this is the number of items to retrieve from server by default
             'retrieve'      : 20,
             // this is the number of items retrieved so far
@@ -97,11 +97,11 @@
         timeoutOptions : {
 
             // Timeout to pass to load when it's called from the mousewheel handler
-            'mousewheel'    : 400,
+            'mousewheel'    : 350,
             // Timeout to pass to load when it's called from the scrollstart handler
-            'scrollstart'   : 600,
+            'scrollstart'   : 500,
             // Timeout to pass to load when it's called from the scrollstop handler
-            'scrollstop'    : 60,
+            'scrollstop'    : 50,
             // this is the timeout for how quickly to show the loading more items progress indicator at bottom
             'showprogress'  : 200,
             // this is the timeout for when there's a button to scroll down manually
@@ -323,7 +323,7 @@
 
             threshold = this.options.threshold || threshold;
 
-            var totalHeight, currentScroll, visibleHeight;
+            var totalHeight, singleItemHeight, currentScroll, visibleHeight;
 
             if ( document.documentElement.scrollTop ) {
 
@@ -338,9 +338,13 @@
 
                 totalHeight = this._instances[this._settings.pageId]['settings'].totalHeight;
 
+                singleItemHeight = this._instances[this._settings.pageId]['settings'].singleItemHeight;
+
             } else {
 
                 totalHeight = this._settings.totalHeight;
+
+                singleItemHeight = this._settings.singleItemHeight;
             }
 
             // Uses the height of browser viewport
@@ -700,21 +704,49 @@
                                                         // Refresh the listview so it is re-enhanced by JQM
                                                         $( mainElementSelector ).listview( 'refresh' );
 
-                                                        count = parseInt( count );
+                                                        // initialize this to zero for now
+                                                        var singleItemHeight = 0;
 
-                                                        var singleItemHeight = $( singleItemElementSelector ).first().next().height();
+                                                        count = parseInt( count );
 
                                                         if ( $that._instances[$that._settings.pageId] ) {
 
                                                             var totalHeight = $that._instances[$that._settings.pageId]['settings'].totalHeight;
 
+                                                            if ( typeof $that._instances[$that._settings.pageId]['settings'].singleItemHeight !== 'undefined' ) {
+
+                                                                // retrieve the value of singleItemHeight for the current instance of the lazyloader
+                                                                singleItemHeight = $that._instances[$that._settings.pageId]['settings'].singleItemHeight;
+
+                                                            } else {
+
+                                                                // We only need to calculate the singleItemHeight for the current instance of the lazyloader once
+                                                                singleItemHeight = $( singleItemElementSelector ).first().next().height();
+
+                                                                // let's store the singleItemHeight for later so we don't have to recalculate it every time
+                                                                $that._instances[$that._settings.pageId]['settings'].singleItemHeight = singleItemHeight;
+                                                            }
+
+                                                            // Adjust the total height based on the number of items that were just lazyloaded
                                                             $that._instances[$that._settings.pageId]['settings'].totalHeight = ( totalHeight + ( singleItemHeight * count ) );
 
                                                         } else {
 
-                                                            var totalHeight = $that._settings.totalHeight;
+                                                            if ( typeof $that._settings.singleItemHeight !== 'undefined' ) {
 
-                                                            $that._settings.totalHeight = ( totalHeight + ( singleItemHeight * count ) );
+                                                                // retrieve the value of singleItemHeight for the current instance of the lazyloader
+                                                                singleItemHeight = $that._settings.singleItemHeight;
+
+                                                            } else {
+
+                                                                // We only need to calculate the singleItemHeight for the current instance of the lazyloader once
+                                                                singleItemHeight = $( singleItemElementSelector ).first().next().height();
+
+                                                                // let's store the singleItemHeight for later so we don't have to recalculate it every time
+                                                                $that._settings.singleItemHeight = singleItemHeight;
+                                                            }
+
+                                                            $that._settings.totalHeight = ( $that._settings.totalHeight + ( $that._settings.singleItemHeight * count ) );
                                                         }
 
                                                         // Increment the stored retrieved count only by the number of items retrieved
