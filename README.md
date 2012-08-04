@@ -10,7 +10,7 @@ Note: This is only the client-side part of the lazyloading solution.  It require
 
 * jQuery 1.7.x (although, jQuery 1.6.4 may work fine - it just hasn't been tested - and, the examples are tailored to jQuery 1.7.x)
 * jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)
-* jquery.json2html-3.0.js - if using json2html JSON transform templates (Use the jquery.json2html-3.0.fixed.js if you want to use inline functions - it wasn't working for me until I wrapped data.action with an eval on line 194)
+* jquery.json2html-3.0.js - if using json2html JSON transform templates
 * ICanHaz.js - if using ICanHaz templates
 * handlebars-1.0.0.beta.6.js - if using standard Handlebars templates
 * handlebars.runtime.js - if using pre-compiled Handlebars templates
