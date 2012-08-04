@@ -180,54 +180,49 @@
                     // First check to see if we are already tracking an instance for the page being re-initialized before storing the defaults
                     if ( !this._instances[newPageId] ) {
 
-                        // create a copy to be stored along with the instance
-                        optionsAsString = JSON.stringify(this.options);
+                        // Only try to retrieve the template from the DOM if it has not already been set externally by the user
+                        if ( ( typeof this._settings.template == 'undefined' ) || ( this._settings.template == '' ) ) {
 
-                        // retrieve the template from the DOM so we can store it along with the instance 
-                        if ( ( typeof this._settings.templateId != 'undefined' ) && ( this._settings.templateId != '') ) {
+                            // retrieve the template from the DOM so we can store it along with the instance 
+                            if ( ( typeof this._settings.templateId != 'undefined' ) && ( this._settings.templateId != '') ) {
 
-                            // retrieve the template from the DOM
-                            var template = $( "#"+this._settings.templateId ).html();
+                                // retrieve the template from the DOM
+                                var template = $( "#"+this._settings.templateId ).html();
 
-                            var templateType = "";
+                                var templateType = "";
 
-                            var templatePrecompiled = this._settings.templatePrecompiled;
+                                var templatePrecompiled = this._settings.templatePrecompiled;
 
-                            if (( typeof this._settings.templateType != 'undefined' ) && ( this._settings.templateType != '') ) {
+                                if (( typeof this._settings.templateType != 'undefined' ) && ( this._settings.templateType != '') ) {
 
-                                templateType = this._settings.templateType;
-                            }
+                                    templateType = this._settings.templateType;
+                                }
 
-                            // Dust templates seem to be the only ones that can be pre-compiled at initialization and then loaded when needed at runtime
-                            if ( ( templateType === "dust" ) && ( template !== "" ) && ( !templatePrecompiled ) ) {
+                                // Dust templates seem to be the only ones that can be pre-compiled at initialization and then loaded when needed at runtime
+                                if ( ( templateType === "dust" ) && ( template !== "" ) && ( !templatePrecompiled ) ) {
 
-                                // add the pre-compiled template to the settings object
-                                this._settings.template = dust.compile( template, this._settings.templateId );                        
+                                    // add the pre-compiled template to the settings object
+                                    this._settings.template = dust.compile( template, this._settings.templateId );                        
 
-                            } else {
+                                } else {
 
-                                // add it to the settings object
-                                this._settings.template = template; 
+                                    // add it to the settings object
+                                    this._settings.template = template;
+                                }
                             }
                         }
-
-                        // create a copy to be stored along with the instance
-                        settingsAsString = JSON.stringify( this._settings );
-
-                        // create a copy to be stored along with the instance
-                        selectorsAsString = JSON.stringify( this._selectors );
 
                         // initialize a new object for this newPageId
                         this._instances[newPageId] = [];
 
                         // Store the merged options object as a new instance for later modifications and retrieval
-                        this._instances[newPageId]['options'] = $.parseJSON( optionsAsString );
+                        this._instances[newPageId]['options'] = $.extend( true, {}, this.options );
 
                         // Store the merged settings object as a new instance for later retrieval
-                        this._instances[newPageId]['settings'] = $.parseJSON( settingsAsString );
+                        this._instances[newPageId]['settings'] = $.extend( true, {}, this._settings );
 
                         // Store the merged selectors object as a new instance for later retrieval
-                        this._instances[newPageId]['selectors'] = $.parseJSON( selectorsAsString );
+                        this._instances[newPageId]['selectors'] = $.extend( true, {}, this._selectors );
                     }
                 }
             }
@@ -600,7 +595,7 @@
                                                                     }
 
                                                                     // Transform the retrieved json data into HTML using the transform template that was set at re-initialization for this page
-                                                                    $( mainElementSelector ).json2html( json, $.parseJSON( template ) );
+                                                                    $( mainElementSelector ).json2html( json, template );
 
                                                                     // first make sure there was a list-divider
                                                                     if ( $bottomElement ) {
