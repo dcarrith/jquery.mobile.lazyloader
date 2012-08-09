@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Jquery.mobile.lazyloader : jquery.mobile.lazyloader is a jQuery Mobile Widget for lazy loading listviews with AJAX or JSONP calls to a server-side resource.  " />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Jquery.mobile.lazyloader</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/dcarrith/jquery.mobile.lazyloader">View on GitHub</a>
+
+          <h1 id="project_title">Jquery.mobile.lazyloader</h1>
+          <h2 id="project_tagline">jquery.mobile.lazyloader is a jQuery Mobile Widget for lazy loading listviews with AJAX or JSONP calls to a server-side resource.  </h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/dcarrith/jquery.mobile.lazyloader/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/dcarrith/jquery.mobile.lazyloader/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>LazyLoader Widget for jQuery Mobile</h3>
+
+<p>Lazyloading (i.e. loading the content as it's needed during a scroll of a listview or similar control) is a great way to optimize the performance of any app that contains a list of 50 or more items.  With the LazyLoader Widget for jQuery Mobile, you can easily lazyload any listview without having to write a bunch of custom code to accomplish it.  The idea is to enable the widget on index pageinit, and then track instances of pages that contain listviews that can all be independently lazyloaded with the main widget instance.</p>
+
+<p>Note: This is only the client-side part of the lazyloading solution.  It requires a server-side resource that returns a simple JSON formatted string.  Details and examples can be found below. </p>
+
+<h3>Requirements</h3>
+
+<ul>
+<li>jQuery 1.7.x (although, jQuery 1.6.4 may work fine - it just hasn't been tested - and, the examples are tailored to jQuery 1.7.x)</li>
+<li>jQuery Mobile 1.1.x (1.0.x might work fine - it just hasn't been tested)</li>
+<li>jquery.json2html-3.0.js - if using json2html JSON transform templates</li>
+<li>ICanHaz.js - if using ICanHaz templates</li>
+<li>handlebars-1.0.0.beta.6.js - if using standard Handlebars templates</li>
+<li>handlebars.runtime.js - if using pre-compiled Handlebars templates</li>
+<li>dust-full-1.0.0.js - if using Dust templates - note: this is the version maintained by LinkedIn</li>
+<li>dust-core-1.0.0.js - if using pre-compiled Dust templates - note: this is the version maintained by LinkedIn</li>
+<li>doT.js - if using doT templates (optimized fork of Underscore.js)</li>
+<li>Server-side code to handle the AJAX requests</li>
+</ul><h3>Using the LazyLoader widget</h3>
+
+<p>First, to use the widget, you must download the main JavaScript file into your JavaScript directory.  Then, simply include the widget file after the core jQuery Mobile JavaScript file and the other dependencies:</p>
+
+<div class="highlight"><pre><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"includes/js/jquery-1.7.2.min.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+
+<span class="c">&lt;!-- Template library or libraries can probably go here --&gt;</span>
+
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"includes/js/jquery.mobile-1.1.0.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"includes/js/jquery.mobile.lazyloader.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+</pre></div>
+
+<p>Then, to instantiate the widget instance, add a pageinit for your main page (in my case the main data-role="page" has an id="index"):  </p>
+
+<div class="highlight"><pre><span class="nx">$</span><span class="p">(</span><span class="s1">'body'</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">'pageinit'</span><span class="p">,</span> <span class="s1">'#index'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">evt</span><span class="p">,</span> <span class="nx">ui</span> <span class="p">)</span> <span class="p">{</span>
+
+    <span class="c1">// Initialize the lazyloader widget</span>
+    <span class="nx">$</span><span class="p">(</span><span class="s2">"#index"</span><span class="p">).</span><span class="nx">lazyloader</span><span class="p">();</span>
+
+    <span class="cm">/* Set some default options for the lazyloader</span>
+<span class="cm">     *   the first three set the timeout value for when the widget should check</span>
+<span class="cm">     *   the current scroll position relative to page height to decide whether</span>
+<span class="cm">     *   or not to load more yet.  The showprogress option is to specify the</span>
+<span class="cm">     *   duration of the fadeIn animation for the lazyloaderProgressDiv.</span>
+<span class="cm">     */</span>
+    <span class="nx">$</span><span class="p">.</span><span class="nx">mobile</span><span class="p">.</span><span class="nx">lazyloader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">timeoutOptions</span><span class="p">.</span><span class="nx">mousewheel</span> <span class="o">=</span> <span class="mi">300</span><span class="p">;</span>
+    <span class="nx">$</span><span class="p">.</span><span class="nx">mobile</span><span class="p">.</span><span class="nx">lazyloader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">timeoutOptions</span><span class="p">.</span><span class="nx">scrollstart</span> <span class="o">=</span> <span class="mi">700</span><span class="p">;</span>
+    <span class="nx">$</span><span class="p">.</span><span class="nx">mobile</span><span class="p">.</span><span class="nx">lazyloader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">timeoutOptions</span><span class="p">.</span><span class="nx">scrollstop</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+    <span class="nx">$</span><span class="p">.</span><span class="nx">mobile</span><span class="p">.</span><span class="nx">lazyloader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">timeoutOptions</span><span class="p">.</span><span class="nx">showprogress</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>Now, the rest of this documentation will use examples specific to the application
+for which this widget was originally developed (<a href="http://www.mpdtunes.com">www.mpdtunes.com</a>).  Using a music
+app as the model will provide good use-case scenarios to be explained.  </p>
+
+<p>For any pages that contain listviews that you want to lazyload, you have to add a 
+pageinit handler such as the one used below for the artists page:</p>
+
+<div class="highlight"><pre><span class="nx">$</span><span class="p">(</span><span class="s1">'body'</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">'pageinit'</span><span class="p">,</span> <span class="s1">'#artists'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="nx">ui</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="cm">/* Reset the lazy loader instance for the albums page</span>
+<span class="cm">     *   This resets the widget instance variables for the albums page    </span>
+<span class="cm">     *   This is done here because the artists page is one level up</span>
+<span class="cm">     *   from the albums page, so it needs to be reset in case the user</span>
+<span class="cm">     *   selects a different artist who will have their own albums that</span>
+<span class="cm">     *   will need to be lazy loaded</span>
+<span class="cm">     *   </span>
+<span class="cm">     *   Note: in this example, "reset" is the function and "albums" is</span>
+<span class="cm">     *      the pageId of the albums page </span>
+<span class="cm">     */</span>
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"reset"</span><span class="p">,</span> <span class="s2">"albums"</span> <span class="p">);</span>
+
+    <span class="c1">// Use an automatic threshold that's a function of the height of the viewport</span>
+    <span class="nx">threshold</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span> <span class="nb">window</span> <span class="p">).</span><span class="nx">height</span><span class="p">();</span>
+
+    <span class="c1">// Set up the variable options to pass to the lazyloader reinitialize function</span>
+    <span class="kd">var</span> <span class="nx">options</span> <span class="o">=</span> <span class="p">{</span>   <span class="s2">"threshold"</span>   <span class="o">:</span> <span class="nx">threshold</span><span class="p">,</span>
+                      <span class="s2">"retrieve"</span>    <span class="o">:</span> <span class="mi">20</span><span class="p">,</span>
+                      <span class="s2">"retrieved"</span>   <span class="o">:</span> <span class="mi">20</span><span class="p">,</span>
+                      <span class="s2">"bubbles"</span>     <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+                      <span class="s2">"offset"</span>      <span class="o">:</span> <span class="mi">0</span> <span class="p">};</span>
+
+    <span class="c1">// Set up the page specific settings to pass to the lazyloader reinitialize function</span>
+    <span class="kd">var</span> <span class="nx">settings</span> <span class="o">=</span> <span class="p">{</span>  <span class="s2">"pageId"</span>                <span class="o">:</span> <span class="s2">"artists"</span><span class="p">,</span>
+                      <span class="s2">"templateType"</span>          <span class="o">:</span> <span class="s2">"dust"</span><span class="p">,</span>
+                      <span class="s2">"templateId"</span>            <span class="o">:</span> <span class="s2">"artists"</span><span class="p">,</span>
+                      <span class="s2">"templatePrecompiled"</span>   <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+                      <span class="s2">"mainId"</span>                <span class="o">:</span> <span class="s2">"artistsList"</span><span class="p">,</span>
+                      <span class="s2">"progressDivId"</span>         <span class="o">:</span> <span class="s2">"lazyloaderProgressDiv"</span><span class="p">,</span>
+                      <span class="s2">"moreUrl"</span>               <span class="o">:</span> <span class="s2">"/artists/more"</span><span class="p">,</span>
+                      <span class="s2">"clearUrl"</span>              <span class="o">:</span> <span class="s2">"/home/clear_session"</span> <span class="p">};</span>
+
+    <span class="c1">// Set up the post parameters to pass to the lazyloader reinitialize function</span>
+    <span class="kd">var</span> <span class="nx">parameters</span> <span class="o">=</span> <span class="p">{</span>  <span class="s2">"retrieve"</span>    <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">retrieve</span><span class="p">,</span>
+                        <span class="s2">"retrieved"</span>   <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">retrieved</span><span class="p">,</span>
+                        <span class="s2">"offset"</span>      <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">offset</span> <span class="p">};</span>
+
+    <span class="c1">// Reinitialize the lazyloader so that it correctly handles the listview on the artists page</span>
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"reInitialize"</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">parameters</span> <span class="p">);</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>Here's an example of how the lazyloader is reinitialized on the albums page.  Notice the higher threshold compared to the artists page and the lower retrieve and retrieved values.  That is because the albums list items are about twice the height of the artists li items because the albums have album art:</p>
+
+<div class="highlight"><pre><span class="nx">$</span><span class="p">(</span><span class="s1">'body'</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">'pageinit'</span><span class="p">,</span> <span class="s1">'#albums'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="nx">ui</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="c1">// Use an automatic threshold that's a function of the height of the viewport</span>
+    <span class="nx">threshold</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span> <span class="nb">window</span> <span class="p">).</span><span class="nx">height</span><span class="p">();</span>
+
+    <span class="c1">// Set up the variable options to pass to the lazyloader reinitialize function</span>
+    <span class="kd">var</span> <span class="nx">options</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">"threshold"</span>   <span class="o">:</span> <span class="nx">threshold</span><span class="p">,</span>
+                    <span class="s2">"retrieve"</span>    <span class="o">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">"retrieved"</span>   <span class="o">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">"bubbles"</span>     <span class="o">:</span> <span class="kc">true</span> <span class="p">};</span>
+
+    <span class="c1">// Set up the page specific settings to pass to the lazyloader reinitialize function</span>
+    <span class="kd">var</span> <span class="nx">settings</span> <span class="o">=</span> <span class="p">{</span>  <span class="s2">"pageId"</span>                <span class="o">:</span> <span class="s2">"albums"</span><span class="p">,</span>
+                      <span class="s2">"templateType"</span>          <span class="o">:</span> <span class="s2">"dust"</span><span class="p">,</span>
+                      <span class="s2">"templateId"</span>            <span class="o">:</span> <span class="s2">"albums"</span><span class="p">,</span>
+                      <span class="s2">"templatePrecompiled"</span>   <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+                      <span class="s2">"mainId"</span>                <span class="o">:</span> <span class="s2">"albumsList"</span><span class="p">,</span>
+                      <span class="s2">"progressDivId"</span>         <span class="o">:</span> <span class="s2">"lazyloaderProgressDiv"</span><span class="p">,</span>
+                      <span class="s2">"moreUrl"</span>               <span class="o">:</span> <span class="s2">"/albums/more"</span><span class="p">,</span>
+                      <span class="s2">"clearUrl"</span>              <span class="o">:</span> <span class="s2">"/home/clear_session"</span> <span class="p">};</span>
+
+    <span class="c1">// Set up the post parameters to pass to the lazyloader reinitialize function</span>
+    <span class="kd">var</span> <span class="nx">parameters</span> <span class="o">=</span> <span class="p">{</span>  <span class="s2">"retrieve"</span>    <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">retrieve</span><span class="p">,</span>
+                        <span class="s2">"retrieved"</span>   <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">retrieved</span><span class="p">,</span>
+                        <span class="s2">"offset"</span>      <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">offset</span> <span class="p">};</span>
+
+    <span class="c1">// Reinitialize the lazyloader so that it correctly handles the listview on the artists page</span>
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"reInitialize"</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">parameters</span> <span class="p">);</span>
+<span class="p">});</span>
+</pre></div>
+
+<h3>What to do when a listview also has a search filter?</h3>
+
+<p>When a listvew is being lazy loaded and also has a search filter (which kind of requires all items to be shown so they can be filtered properly) the trick is to just pull the rest of the listview items onfocus to the search filter.  Here's an example of how to do that:</p>
+
+<div class="highlight"><pre><span class="nx">$</span><span class="p">(</span><span class="s1">'body'</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">'focusin'</span><span class="p">,</span> <span class="s1">'input[data-type="search"]'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="nx">ui</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="c1">// Set the retrieve option to all so it pulls the rest of the items to lazy load</span>
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"option"</span><span class="p">,</span> <span class="s2">"retrieve"</span><span class="p">,</span> <span class="s2">"all"</span> <span class="p">);</span>
+
+    <span class="c1">// Refresh the corresponding parameter with the option that was just set</span>
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"refresh"</span><span class="p">,</span> <span class="s2">"parameter"</span><span class="p">,</span> <span class="s2">"retrieve"</span> <span class="p">);</span>
+
+    <span class="c1">// Manually make a call to the public version of the _load function and override the default timeout</span>
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"loadMore"</span><span class="p">,</span> <span class="mi">0</span> <span class="p">);</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>Basically, the first line sets the option "retrieve" to the value "all".  The refresh method is then called and the "retrieve" parameter is updated with the value of the option that was just set.  Then, the loadMore function is called using the internal options and parameters stored for the particular page on which the listview and search filter exist.  </p>
+
+<h3>What to do when there is a button that manually scrolls the page down (and therefore doesn't use scrollstart, scrollstop or mousewheel)?</h3>
+
+<p>It's easy, just call loadMore, which will use whatever options, settings and parameters the lazyloader widget was re-initialized with:</p>
+
+<div class="highlight"><pre><span class="kd">function</span> <span class="nx">scrollDown</span><span class="p">(</span><span class="nx">section</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="c1">// do whatever</span>
+    <span class="p">...</span>
+
+    <span class="c1">// Manually make a call to the public version of the _load function</span>
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"loadMore"</span> <span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3>Explanation of available options:</h3>
+
+<table>
+<tr>
+<th>Option</th>
+<th>Value</th>
+<th>Purpose</th>
+  </tr>
+<tr>
+<td>threshold</td>
+<td>$( window ).height()</td>
+<td>This specifies the threshold in pixels for how close to the bottom of the page should the widget get before making the call to the private function _load.  It now defaults to $( window ).height() but can be overridden with a static value or any function of $( window ).height() (e.g. 2 * $( window ).height() if you want)</td>
+  </tr>
+<tr>
+<td>retrieve</td>
+<td>20</td>
+<td>This specifies how many items should be retrieved with each lazy loading ajax call</td>
+  </tr>
+<tr>
+<td>retrieved</td>
+<td>20</td>
+<td>This specifies the number of items that are initially loaded on the server-side</td>
+  </tr>
+<tr>
+<td>bubbles</td>
+<td>true</td>
+<td>This specifies whether or not to calculate the count bubbles in the list item markup that get's loaded dynamically</td>
+  </tr>
+<tr>
+<td>offset</td>
+<td>0</td>
+<td>This is for specifying an offset into the query for more items.  For example, this is used in the queue page in case tracks are deleted from the queue while there are still items to lazy load.</td>
+  </tr>
+</table><h3>Explanation of available settings:</h3>
+
+<table>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+<th>Purpose</th>
+  </tr>
+<tr>
+<td>pageId</td>
+<td>artists</td>
+<td>This specifies the id of the data-role="page" div element of the page containing the listview to lazyload</td>
+  </tr>
+<tr>
+<td>templateType</td>
+<td>dust</td>
+<td>This specifies the template library type to use.  Possible values are <a href="http://json2html.com/">json2html</a>, <a href="http://handlebarsjs.com/">handlebars</a>, <a href="http://icanhazjs.com/">icanhaz</a>, <a href="http://akdubya.github.com/dustjs/">dust</a> and <a href="http://olado.github.com/doT/">dot</a>
+</td>
+  </tr>
+<tr>
+<td>templateId</td>
+<td>artists</td>
+<td>This specifies the id of the &lt;script&gt; element containing the template.  If templates are loaded externally as pre-compiled templates, then the templateId should be the same name that was assigned to the template when compiled - both internal name (e.g. with Dust) and/or actual filename (e.g. with Handlebars).  Note: only Handlebars and Dust templates are supported as pre-compiled templates.  All other templates should be defined with a &lt;script&gt; element with an id equal to whatever you want to use for templateId.</td>
+  </tr>
+<tr>
+<td>templatePrecompiled</td>
+<td>true</td>
+<td>This a boolean that indicates whether the lazyloader should expect pre-compiled templates for the templateType in use (Note: only Handlebars and Dust templates are supported as pre-compiled templates)</td>
+  </tr>
+<tr>
+<td>mainId</td>
+<td>artistsList</td>
+<td>This specifies the id of the ul element of the listview to lazyload</td>
+  </tr>
+<tr>
+<td>progressDivId</td>
+<td>lazyloaderProgressDiv</td>
+<td>This specifies the id of the div element containing the lazyloading progress indicator animated gif or whatever</td>
+  </tr>
+<tr>
+<td>moreUrl</td>
+<td>/artists/more</td>
+<td>This specifies the URL of the server-side resource to which the AJAX post should be sent</td>
+  </tr>
+<tr>
+<td>clearUrl</td>
+<td>/home/clear_session</td>
+<td>This specifies the URL of the server-side resource to which the AJAX post to clear the server-side session variables should be sent</td>
+  </tr>
+<tr>
+<td>JSONP</td>
+<td>true</td>
+<td>This is a boolean to indicate whether or not JSONP should be used for crossdomain lazyloading</td>
+  </tr>
+<tr>
+<td>JSONPCallback</td>
+<td>callback</td>
+<td>This specifies the name of the callback to use</td>
+  </tr>
+</table><h3>Explanation of available parameters:</h3>
+
+<p>The values of the parameters are taken from the values specified in the options object.  The parameters object is used in generating the POST variables for the AJAX call to the server-side resource for retrieving more li elements to lazy load.  Any items specified in the parameters will be complemented by any
+hidden input elements that are on the same page as the listview element to lazyload.</p>
+
+<h3>The AJAX call to the server-side resource</h3>
+
+<p>First, the lazyloader widget makes a call to fadeIn the lazyloaderProgressDiv which contains the animated gif to indicate that more items are being loaded.  The HTML for the lazyloaderProgressDiv looks like this:</p>
+
+<div class="highlight"><pre><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">"lazyloaderProgressDiv"</span> <span class="na">class=</span><span class="s">"width-hundred-percent display-none"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"width-two-hundred-pixels center-element align-center"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">"/images/loading_more_bar.gif"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;br</span> <span class="na">class=</span><span class="s">"clear"</span> <span class="nt">/&gt;</span>
+</pre></div>
+
+<p>The CSS for those classes is as follows:</p>
+
+<div class="highlight"><pre><span class="nc">.width-hundred-percent</span> <span class="p">{</span>
+    <span class="k">width</span><span class="o">:</span><span class="m">100</span><span class="o">%</span> <span class="cp">!important</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="nc">.display-none</span> <span class="p">{</span>
+    <span class="k">display</span><span class="o">:</span><span class="k">none</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="nc">.width-two-hundred-pixels</span> <span class="p">{</span>
+    <span class="k">width</span><span class="o">:</span><span class="m">200px</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="nc">.center-element</span> <span class="p">{</span>
+    <span class="k">margin-right</span><span class="o">:</span> <span class="k">auto</span><span class="p">;</span> 
+    <span class="k">margin-left</span><span class="o">:</span> <span class="k">auto</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="nc">.align-center</span> <span class="p">{</span>
+    <span class="k">text-align</span><span class="o">:</span> <span class="k">center</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Taking the moreUrl (with value "/albums/more") setting above as an example, and the parameters object to generate the POST variables, here's what it might look like.  Because we also need to know which artist to use when retrieving albums, we set a hidden input in the albums page:</p>
+
+<div class="highlight"><pre><span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">"hidden"</span> <span class="na">id=</span><span class="s">"param_one"</span> <span class="na">name=</span><span class="s">"param_one"</span> <span class="na">value=</span><span class="s">"&lt;?php echo $artist_name; ?&gt;"</span> <span class="nt">/&gt;</span>
+</pre></div>
+
+<p>The lazyloader widget will automatically build the string to use for the POST data for the $.ajax request by usng the parameters passed in at initialization as well as the hidden input item so that POST data string will look like this:</p>
+
+<div class="highlight"><pre>retrieve=10<span class="err">&amp;</span>retrieved=10<span class="err">&amp;</span>offset=0<span class="err">&amp;</span>param_one=Gentleman
+</pre></div>
+
+<p>The server-side resource will then take those parameters and build the JSON response (which contains ready-made HTML in this case) that would look something like below.  For example, if 10 Gentleman albums out of 12 were already showing, then this would be the server response with the last 2 albums:</p>
+
+<div class="highlight"><pre><span class="p">{</span> <span class="s2">"data"</span> <span class="o">:</span> 
+    <span class="p">[{</span>  <span class="s2">"count"</span> <span class="o">:</span> <span class="s2">"2"</span><span class="p">,</span> 
+        <span class="s2">"html"</span> <span class="o">:</span> <span class="s2">"  &lt;li class='ui-li-has-thumb'&gt;</span>
+<span class="s2">                        &lt;a href='/artist/Gentleman/album/On%2Bwe%2Bgo/tracks' data-transition='slide'&gt;</span>
+<span class="s2">                            &lt;img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' /&gt;</span>
+<span class="s2">                            &lt;h3 class='ui-li-heading'&gt;On we go&lt;/h3&gt;</span>
+<span class="s2">                            &lt;span class='ui-li-count ui-btn-up-k ui-btn-corner-all'&gt;4&lt;/span&gt;</span>
+<span class="s2">                        &lt;/a&gt;</span>
+<span class="s2">                    &lt;/li&gt;</span>
+<span class="s2">                    &lt;li class='ui-li-has-thumb'&gt;</span>
+<span class="s2">                        &lt;a href='/artist/Gentleman/album/trodin%2Bon/tracks' data-transition='slide'&gt;</span>
+<span class="s2">                            &lt;img src='/path/to/album/art.jpeg' class='ui-li-thumb album-art-img' /&gt;</span>
+<span class="s2">                            &lt;h3 class='ui-li-heading'&gt;trodin on&lt;/h3&gt;</span>
+<span class="s2">                            &lt;span class='ui-li-count ui-btn-up-k ui-btn-corner-all'&gt;14&lt;/span&gt;</span>
+<span class="s2">                        &lt;/a&gt;</span>
+<span class="s2">                    &lt;/li&gt;"</span> 
+    <span class="p">}]</span> 
+<span class="p">}</span>
+</pre></div>
+
+<p>The count is used to increment the instance specific count of how many items were "retrieved".  </p>
+
+<p>The html is used in the below two lines of the lazyloader widget _load function which appends them to the end of the li items just before the last li (which is likely the divider).  If there is no "bottomElement" such as a list-divider li, then the html is appended into the mainSelector (in this case, #albumsList, which is the ul element):</p>
+
+<div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="nx">$bottomElement</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">$</span><span class="p">(</span> <span class="nx">singleItemElementSelector</span> <span class="p">).</span><span class="nx">last</span><span class="p">().</span><span class="nx">before</span><span class="p">(</span> <span class="nx">html</span> <span class="p">);</span>
+
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+
+    <span class="nx">$</span><span class="p">(</span> <span class="nx">mainElementSelector</span> <span class="p">).</span><span class="nx">append</span><span class="p">(</span> <span class="nx">html</span> <span class="p">);</span>
+<span class="p">}</span> 
+</pre></div>
+
+<p>If using raw JSON as the server response (rather than including ready-made HTML) the response might look something like this:</p>
+
+<div class="highlight"><pre><span class="p">{</span> <span class="s2">"data"</span> <span class="o">:</span> 
+    <span class="p">[{</span>  <span class="s2">"count"</span> <span class="o">:</span> <span class="s2">"2"</span><span class="p">,</span> 
+        <span class="s2">"json"</span> <span class="o">:</span> <span class="p">[</span>
+                    <span class="p">{</span>   <span class="s2">"href"</span> <span class="o">:</span> <span class="s2">"/artist/Gentleman/album/On%2Bwe%2Bgo/tracks"</span><span class="p">,</span>
+                        <span class="s2">"art"</span><span class="o">:</span><span class="s2">"/cache/art/master/9b455cabc0b2c022f4ebde2241ed9d361ae350fc.jpeg"</span><span class="p">,</span> 
+                        <span class="s2">"transition"</span><span class="o">:</span><span class="s2">"slide"</span><span class="p">,</span> 
+                        <span class="s2">"name"</span><span class="o">:</span><span class="s2">"On we go"</span><span class="p">,</span> 
+                        <span class="s2">"theme_buttons"</span><span class="o">:</span><span class="s2">"k"</span><span class="p">,</span> 
+                        <span class="s2">"count_bubble_value"</span><span class="o">:</span><span class="s2">"4"</span> 
+                    <span class="p">},{</span> 
+                        <span class="s2">"href"</span> <span class="o">:</span> <span class="s2">"/artist/Gentleman/album/trodin%2Bon/tracks"</span><span class="p">,</span>
+                        <span class="s2">"art"</span><span class="o">:</span><span class="s2">"/cache/art/master/f6b8215b788379fab5dffc0c172aa99cba20d121.jpeg"</span><span class="p">,</span>
+                        <span class="s2">"transition"</span><span class="o">:</span><span class="s2">"slide"</span><span class="p">,</span> 
+                        <span class="s2">"name"</span><span class="o">:</span><span class="s2">"trodin on"</span><span class="p">,</span> 
+                        <span class="s2">"theme_buttons"</span><span class="o">:</span><span class="s2">"k"</span><span class="p">,</span> 
+                        <span class="s2">"count_bubble_value"</span><span class="o">:</span><span class="s2">"14"</span> 
+                    <span class="p">}</span>
+                <span class="p">]</span> 
+    <span class="p">}]</span> 
+<span class="p">}</span>
+</pre></div>
+
+<p>The count is used to increment the instance specific count of how many items were "retrieved".  The inner JSON piece is then passed to a user-defined template for transformation to HTML.  </p>
+
+<p>Pre-compiled Dust templates are the recommended method of rendering since they are very fast and the template files can be concatonated and minified along with the rest of your site's JavaScript.  Additionally, only the dust core is needed by the client, so overall script size is reduced (the compiler, which is a big chunk of the code, is not needed).  </p>
+
+<p>Here's an example of the Dust template for the albums page (before being pre-compiled into usable JavaScript).  The file is stored as albums.tmpl.</p>
+
+<div class="highlight"><pre><span class="p">{</span><span class="err">#</span><span class="nx">json</span><span class="p">}</span>
+    <span class="o">&lt;</span><span class="nx">li</span> <span class="kr">class</span><span class="o">=</span><span class="s1">'ui-li-has-thumb'</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="nx">a</span> <span class="nx">href</span><span class="o">=</span><span class="s1">'{href}'</span> <span class="kr">class</span><span class="o">=</span><span class="s1">'ui-link-inherit'</span> <span class="nx">data</span><span class="o">-</span><span class="nx">transition</span><span class="o">=</span><span class="s1">'{transition}'</span><span class="o">&gt;</span>
+            <span class="o">&lt;</span><span class="nx">img</span> <span class="nx">src</span><span class="o">=</span><span class="s1">'{art}'</span> <span class="kr">class</span><span class="o">=</span><span class="s1">'ui-li-thumb album-art-img'</span> <span class="o">/&gt;</span>
+            <span class="o">&lt;</span><span class="nx">h3</span> <span class="kr">class</span><span class="o">=</span><span class="s1">'ui-li-heading album-name-heading'</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">name</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/h3&gt;</span>
+            <span class="o">&lt;</span><span class="nx">span</span> <span class="kr">class</span><span class="o">=</span><span class="s1">'ui-li-count ui-btn-up-{theme_buttons} ui-btn-corner-all'</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">count_bubble_value</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/span&gt;</span>
+            <span class="o">&lt;</span><span class="nx">p</span> <span class="kr">class</span><span class="o">=</span><span class="s1">'ui-li-aside ui-li-desc'</span><span class="o">&gt;</span><span class="p">{</span><span class="nx">total_length</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+        <span class="o">&lt;</span><span class="err">/a&gt;</span>
+    <span class="o">&lt;</span><span class="err">/li&gt;</span>
+<span class="p">{</span><span class="err">/json}</span>
+</pre></div>
+
+<p>For instructions on pre-compiling Dust templates, see the LinkedIn github page: <a href="http://linkedin.github.com/dustjs/">http://linkedin.github.com/dustjs/</a> </p>
+
+<p>Here's the pre-compiled Dust template for the albums page which is stored in an external file named albums.tmpl.js:</p>
+
+<div class="highlight"><pre><span class="p">(</span><span class="kd">function</span><span class="p">(){</span><span class="nx">dust</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="s2">"albums"</span><span class="p">,</span><span class="nx">body_0</span><span class="p">);</span><span class="kd">function</span> <span class="nx">body_0</span><span class="p">(</span><span class="nx">chk</span><span class="p">,</span><span class="nx">ctx</span><span class="p">){</span><span class="k">return</span> <span class="nx">chk</span><span class="p">.</span><span class="nx">section</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"json"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,{</span><span class="s2">"block"</span><span class="o">:</span><span class="nx">body_1</span><span class="p">},</span><span class="kc">null</span><span class="p">);}</span><span class="kd">function</span> <span class="nx">body_1</span><span class="p">(</span><span class="nx">chk</span><span class="p">,</span><span class="nx">ctx</span><span class="p">){</span><span class="k">return</span> <span class="nx">chk</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s2">"&lt;li class='ui-li-has-thumb'&gt;&lt;a href='"</span><span class="p">).</span><span class="nx">reference</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"href"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,</span><span class="s2">"h"</span><span class="p">).</span><span class="nx">write</span><span class="p">(</span><span class="s2">"' class='ui-link-inherit' data-transition='"</span><span class="p">).</span><span class="nx">reference</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"transition"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,</span><span class="s2">"h"</span><span class="p">).</span><span class="nx">write</span><span class="p">(</span><span class="s2">"'&gt;&lt;img src='"</span><span class="p">).</span><span class="nx">reference</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"art"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,</span><span class="s2">"h"</span><span class="p">).</span><span class="nx">write</span><span class="p">(</span><span class="s2">"' class='ui-li-thumb album-art-img' /&gt;&lt;h3 class='ui-li-heading album-name-heading'&gt;"</span><span class="p">).</span><span class="nx">reference</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,</span><span class="s2">"h"</span><span class="p">).</span><span class="nx">write</span><span class="p">(</span><span class="s2">"&lt;/h3&gt;&lt;span class='ui-li-count ui-btn-up-"</span><span class="p">).</span><span class="nx">reference</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"theme_buttons"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,</span><span class="s2">"h"</span><span class="p">).</span><span class="nx">write</span><span class="p">(</span><span class="s2">" ui-btn-corner-all'&gt;"</span><span class="p">).</span><span class="nx">reference</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"count_bubble_value"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,</span><span class="s2">"h"</span><span class="p">).</span><span class="nx">write</span><span class="p">(</span><span class="s2">"&lt;/span&gt;&lt;p class='ui-li-aside ui-li-desc'&gt;"</span><span class="p">).</span><span class="nx">reference</span><span class="p">(</span><span class="nx">ctx</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"total_length"</span><span class="p">),</span><span class="nx">ctx</span><span class="p">,</span><span class="s2">"h"</span><span class="p">).</span><span class="nx">write</span><span class="p">(</span><span class="s2">"&lt;/p&gt;&lt;/a&gt;&lt;/li&gt;"</span><span class="p">);}</span><span class="k">return</span> <span class="nx">body_0</span><span class="p">;})();</span>
+</pre></div>
+
+<p>That albums.tmpl.js file should then be concatonated and minified and gzipped along with the rest of the site's JavaScript.  </p>
+
+<h3>Resetting instance variables and clearing the server-side session variables</h3>
+
+<p>Any values specific to a particular instance of the lazy loader and any server-side session variables can be cleared by calling the lazyloader reset or resetAll methods.  For example, I'm calling the resetAll in the index pageshow handler:</p>
+
+<div class="highlight"><pre><span class="nx">$</span><span class="p">(</span><span class="s1">'body'</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">'pageshow'</span><span class="p">,</span> <span class="s1">'#index'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="nx">ui</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">$</span><span class="p">(</span> <span class="s2">"#index"</span> <span class="p">).</span><span class="nx">lazyloader</span><span class="p">(</span> <span class="s2">"resetAll"</span> <span class="p">);</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>The resetAll method uses the clearUrl that was specified when the lazyloader for the page in question was reinitialized.</p>
+
+<h3>Listening for events triggered by the lazyloader widget</h3>
+
+<p>The lazyloader triggers several events during certain operations.  Here are examples of how to listen for the events:</p>
+
+<div class="highlight"><pre><span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloadercreate"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloaderbeforecreate"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloaderdestroy"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloaderdoneloading"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloaderalldone"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloaderbusy"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloadererror"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloaderreset"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">(</span><span class="s2">"body"</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">"lazyloaderresetall"</span><span class="p">,</span> <span class="s2">"#index"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span> <span class="nx">evt</span> <span class="p">){</span>
+
+<span class="p">});</span>
+</pre></div>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Jquery.mobile.lazyloader maintained by <a href="https://github.com/dcarrith">dcarrith</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-1311263-14");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
